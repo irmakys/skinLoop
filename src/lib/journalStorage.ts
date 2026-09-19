@@ -1,0 +1,147 @@
+import { randomUUID } from "expo-crypto";
+import { Directory, File, Paths } from "expo-file-system";
+
+const JOURNAL_DIR_NAME = "journal";
+const JOURNAL_INDEX_FILE_NAME = "index.json";
+
+export type JournalEntry = {
+  id: string;
+  date: number;
+  filePath: string;
+  note: string | null;
+  /** İlişkili Loop (rutin), varsa — fotoğraf bir rutin akışından çekildiyse. */
+  loopId: string | null;
+};
+
+/** `Paths.document/journal` dizininin var olduğunu doğrular, yoksa oluşturur. */
+function getJournalDirectory(): Directory {
+  const dir = new Directory(Paths.document, JOURNAL_DIR_NAME);
+  if (!dir.exists) {
+    dir.create({ intermediates: true });
+  }
+  return dir;
+}
+
+/**
+ * Kameranın bıraktığı geçici dosyayı Journal dizinine kalıcı bir isimle
+ * kopyalar (uygulamanın kendi sandbox dizini — Paths.document altında,
+ * yalnızca bu uygulama erişebilir).
+ */
+export async function savePhoto(entryId: string, sourceUri: string): Promise<string> {
+  const sourceFile = new File(sourceUri);
+  const destination = new File(getJournalDirectory(), `${entryId}.jpg`);
+
+  if (destination.exists) {
+    destination.delete();
+  }
+
+  await sourceFile.copy(destination);
+  return destination.uri;
+}
+
+export function deletePhoto(filePath: string): void {
+  const file = new File(filePath);
+  if (file.exists) {
+    file.delete();
+  }
+}
+
+function getIndexFile(): File {
+  return new File(getJournalDirectory(), JOURNAL_INDEX_FILE_NAME);
+}
+
+async function readIndex(): Promise<JournalEntry[]> {
+  const file = getIndexFile();
+  if (!file.exists) {
+    return [];
+  }
+
+  const json = await file.text();
+  return JSON.parse(json) as JournalEntry[];
+}
+
+async function writeIndex(entries: JournalEntry[]): Promise<void> {
+  const file = getIndexFile();
+  file.create({ overwrite: true });
+  file.write(JSON.stringify(entries));
+}
+
+/** Tüm Journal kayıtlarını (tarihe göre en yeni önce) döner — yalnızca cihazda, Convex şemasının dışında. */
+export async function listJournalEntries(): Promise<JournalEntry[]> {
+  const entries = await readIndex();
+  return entries.sort((a, b) => b.date - a.date);
+}
+
+/** Belirli bir Loop'a (rutine) bağlı fotoğrafları — kronolojik "Cilt Günlüğü" albümü olarak — döner. */
+export async function listJournalEntriesByLoop(loopId: string): Promise<JournalEntry[]> {
+  const entries = await listJournalEntries();
+  return entries.filter((entry) => entry.loopId === loopId);
+}
+
+/** Fotoğrafı Journal dizinine kopyalar ve kaydı (id, uri, date, note, loopId) index.json'a ekler. */
+export async function addJournalEntry(
+  sourceUri: string,
+  note: string | null = null,
+  loopId: string | null = null,
+): Promise<JournalEntry> {
+  const id = randomUUID();
+  const filePath = await savePhoto(id, sourceUri);
+
+  const entry: JournalEntry = {
+    id,
+    date: Date.now(),
+    filePath,
+    note,
+    loopId,
+  };
+
+  const entries = await readIndex();
+  entries.push(entry);
+  await writeIndex(entries);
+
+  return entry;
+}
+
+export async function deleteJournalEntry(id: string): Promise<void> {
+  const entries = await readIndex();
+  const entry = entries.find((item) => item.id === id);
+  if (entry) {
+    deletePhoto(entry.filePath);
+  }
+
+  await writeIndex(entries.filter((item) => item.id !== id));
+}
+
+/** Birden fazla kaydı (ve fotoğraf dosyalarını) tek seferde siler — Galeri'de "Tümünü Seç" ile toplu silme. */
+export async function deleteJournalEntries(ids: string[]): Promise<void> {
+  const idSet = new Set(ids);
+  const entries = await readIndex();
+
+  for (const entry of entries) {
+    if (idSet.has(entry.id)) {
+      deletePhoto(entry.filePath);
+    }
+  }
+
+  await writeIndex(entries.filter((item) => !idSet.has(item.id)));
+}
+
+/** Bir kaydın notunu ve/veya bağlı olduğu rutini günceller — fotoğraf dosyasına dokunmaz. */
+export async function updateJournalEntry(
+  id: string,
+  changes: { note: string | null; loopId: string | null },
+): Promise<void> {
+  const entries = await readIndex();
+  const next = entries.map((entry) =>
+    entry.id === id ? { ...entry, note: changes.note, loopId: changes.loopId } : entry,
+  );
+  await writeIndex(next);
+}
+
+/** KVKK/GDPR "silme hakkı" — cihazdaki tüm Journal fotoğraf ve notlarını kalıcı olarak siler. */
+export function clearAllJournalData(): void {
+  const dir = getJournalDirectory();
+  if (dir.exists) {
+    dir.delete();
+  }
+}

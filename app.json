@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "skinLoop",
+    "slug": "skinLoop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "skinloop",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "icon": "./assets/expo.icon"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FDFBF6",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      "expo-secure-store",
+      "@sentry/react-native",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "skinLoop, ürün barkodunu taramak için kameraya erişim istiyor."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#8E7CC3"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "skinLoop, Cilt Günlüğü fotoğraflarını cihaz galerine de kaydetmek için erişim istiyor.",
+          "savePhotosPermission": "skinLoop, Cilt Günlüğü fotoğraflarını cihaz galerine kaydetmek istiyor."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "skinLoop, profil fotoğrafı seçmek için galerine erişim istiyor."
+        }
+      ],
+      "expo-sharing"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
