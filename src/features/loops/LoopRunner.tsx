@@ -1,10 +1,11 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import type * as React from "react";
 import { useState } from "react";
 import { View } from "react-native";
-import { Avatar, Button, Card, Chip, Divider, IconButton, Text, useTheme } from "react-native-paper";
+import { Button, Card, Chip, IconButton, Text, useTheme } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
@@ -13,6 +14,9 @@ import { EditLoopReminderDialog, type EditableLoopReminder } from "@/features/lo
 import type { ReminderState } from "@/features/loops/ReminderTimeEditor";
 import { cancelReminder } from "@/lib/notifications";
 import { WEEKDAY_LABELS_TR } from "@/lib/dateKeys";
+import { useAppTheme } from "@/theme/ThemeContext";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS, hexToRgba } from "@/theme/theme";
 
 const LOOP_TYPE_LABELS_TR: Record<string, string> = {
   morning: "Sabah",
@@ -60,6 +64,7 @@ function reminderSummary(loop: {
  */
 export function LoopRunner() {
   const theme = useTheme();
+  const { themeId } = useAppTheme();
   const router = useRouter();
   const loops = useQuery(api.loops.listLoops);
   const products = useQuery(api.products.listProducts);
@@ -113,17 +118,37 @@ export function LoopRunner() {
   return (
     <View style={{ padding: 16, gap: 12 }}>
       {loops.map((loop) => (
-        <Card key={loop._id} mode="elevated" style={{ borderRadius: 16 }}>
+        <Card
+          key={loop._id}
+          mode="elevated"
+          style={{
+            borderRadius: CARD_RADIUS,
+            backgroundColor: theme.colors.surface,
+            overflow: "hidden",
+            ...ELEVATED_SHADOW,
+          }}
+        >
           <Card.Content style={{ gap: 4, paddingBottom: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Avatar.Icon
-                icon={LOOP_TYPE_ICONS[loop.type]}
-                size={40}
-                color={theme.colors.onPrimaryContainer}
-                style={{ backgroundColor: theme.colors.primaryContainer }}
-              />
+              <LinearGradient
+                colors={THEME_GRADIENTS[themeId]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <MaterialCommunityIcons name={LOOP_TYPE_ICONS[loop.type]} size={22} color="#FFFFFF" />
+              </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text variant="titleMedium" style={{ fontWeight: "700" }} numberOfLines={1}>
+                <Text
+                  style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 17, color: theme.colors.onSurface }}
+                  numberOfLines={1}
+                >
                   {loop.name}
                 </Text>
                 <Chip
@@ -176,7 +201,7 @@ export function LoopRunner() {
             </View>
           </Card.Content>
 
-          <Divider />
+          <View style={{ height: 1, backgroundColor: hexToRgba(theme.colors.outline, 0.15), marginHorizontal: 16 }} />
 
           <Card.Content style={{ paddingTop: 4, paddingBottom: 4, gap: 2 }}>
             {loop.steps.map((step, index) => {

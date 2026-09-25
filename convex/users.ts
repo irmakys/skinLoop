@@ -17,11 +17,13 @@ export const getCurrentUser = query({
       return null;
     }
     return {
+      _id: user._id,
       email: user.email ?? null,
       name: user.name ?? null,
       image: user.image ?? null,
       kvkkConsent: user.kvkkConsent ?? false,
       kvkkConsentVersion: user.kvkkConsentVersion ?? null,
+      isEmailVerified: user.isEmailVerified ?? false,
     };
   },
 });

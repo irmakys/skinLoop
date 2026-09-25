@@ -1,22 +1,15 @@
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { api } from "@convex/_generated/api";
-import { useConvex } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ScrollView, View } from "react-native";
-import {
-  Button,
-  Dialog,
-  Divider,
-  HelperText,
-  List,
-  Portal,
-  Switch,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { Button, Dialog, HelperText, List, Portal, Switch, Text, useTheme } from "react-native-paper";
 
+import { AmbientBackground } from "@/components/AmbientBackground";
+import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { useSession } from "@/features/auth/useSession";
 import { ProfileHeader } from "@/features/settings/ProfileHeader";
 import { ThemePicker } from "@/features/settings/ThemePicker";
@@ -27,12 +20,50 @@ import {
   setNotificationPreferences,
   type NotificationPreferences,
 } from "@/lib/preferences";
+import { useBottomClearance } from "@/hooks/useBottomClearance";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
+
+const LEVEL_THRESHOLDS = [
+  { min: 100, stars: 5, title: "Usta" },
+  { min: 60, stars: 4, title: "Uzman" },
+  { min: 30, stars: 3, title: "Kararlı" },
+  { min: 10, stars: 2, title: "Gelişiyor" },
+  { min: 0, stars: 1, title: "Başlangıç" },
+];
+
+function getSkincareLevel(totalCompletions: number): { stars: number; title: string } {
+  const tier = LEVEL_THRESHOLDS.find((level) => totalCompletions >= level.min);
+  return tier ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+}
+
+/** Sert `Divider` çizgileri yerine, sayfayla bütünleşik yumuşak kart grupları. */
+function SectionCard({ title, children }: { title: string; children: ReactNode }) {
+  const theme = useTheme();
+  return (
+    <View
+      style={{
+        backgroundColor: theme.colors.surface,
+        borderRadius: CARD_RADIUS,
+        overflow: "hidden",
+        ...CARD_SHADOW,
+      }}
+    >
+      <List.Section title={title} style={{ marginVertical: 0 }}>
+        {children}
+      </List.Section>
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const convex = useConvex();
   const { signOut } = useSession();
+  const userId = useCurrentUserId();
+  const stats = useQuery(api.users.getProfileStats);
+  const bottomClearance = useBottomClearance();
 
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -98,7 +129,9 @@ export default function SettingsScreen() {
     setIsDeleting(true);
     try {
       await convex.mutation(api.users.deleteMyAccount, {});
-      clearAllJournalData();
+      if (userId) {
+        clearAllJournalData(userId);
+      }
       await signOut();
       setIsDeleteDialogVisible(false);
       router.replace("/(auth)/sign-in");
@@ -109,97 +142,143 @@ export default function SettingsScreen() {
     }
   }
 
+  const level = getSkincareLevel(stats?.totalCompletions ?? 0);
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>
-      <ProfileHeader />
+    <AmbientBackground>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomClearance, gap: 16 }}>
+        <ProfileHeader />
 
-      <Divider />
+          <View
+            style={{
+              backgroundColor: theme.colors.surface,
+              borderRadius: CARD_RADIUS,
+              padding: 20,
+              gap: 14,
+              ...CARD_SHADOW,
+            }}
+          >
+            <View>
+              <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+                Cilt Bakım Seviyen
+              </Text>
+              <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color: theme.colors.onSurface }}>
+                {level.title}
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 4 }}>
+              {Array.from({ length: 5 }, (_, index) => (
+                <MaterialCommunityIcons
+                  key={index}
+                  name={index < level.stars ? "star" : "star-outline"}
+                  size={28}
+                  color={index < level.stars ? theme.colors.tertiary : theme.colors.outlineVariant}
+                />
+              ))}
+            </View>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Tamamladığın her rutin adımı seni bir sonraki seviyeye taşıyor — şu ana kadar{" "}
+              {stats?.totalCompletions ?? 0} adım tamamladın.
+            </Text>
+            <Button
+              mode="contained-tonal"
+              icon="chart-line"
+              onPress={() => router.push("/(tabs)/reports")}
+              style={{ borderRadius: CARD_RADIUS }}
+            >
+              Rutin Raporunu Gör
+            </Button>
+          </View>
 
-      <List.Section title="Görünüm ve Tema">
-        <ThemePicker />
-      </List.Section>
+          <SectionCard title="Görünüm ve Tema">
+            <ThemePicker />
+          </SectionCard>
 
-      <Divider />
-
-      <List.Section title="Bildirim Tercihleri">
-        <List.Item
-          title="Rutin Hatırlatıcıları"
-          description="Sabah/akşam/haftalık rutin bildirimleri"
-          right={() => (
-            <Switch
-              value={preferences?.loopRemindersEnabled ?? true}
-              onValueChange={() => togglePreference("loopRemindersEnabled")}
+          <SectionCard title="Bildirim Tercihleri">
+            <List.Item
+              title="Rutin Hatırlatıcıları"
+              description="Sabah/akşam/haftalık rutin bildirimleri"
+              right={() => (
+                <Switch
+                  value={preferences?.loopRemindersEnabled ?? true}
+                  onValueChange={() => togglePreference("loopRemindersEnabled")}
+                />
+              )}
             />
-          )}
-        />
-        <List.Item
-          title="Ürün Süre Hatırlatıcıları"
-          description="PAO/SKT yaklaşınca bildirim"
-          right={() => (
-            <Switch
-              value={preferences?.expiryRemindersEnabled ?? true}
-              onValueChange={() => togglePreference("expiryRemindersEnabled")}
+            <List.Item
+              title="Ürün Süre Hatırlatıcıları"
+              description="PAO/SKT yaklaşınca bildirim"
+              right={() => (
+                <Switch
+                  value={preferences?.expiryRemindersEnabled ?? true}
+                  onValueChange={() => togglePreference("expiryRemindersEnabled")}
+                />
+              )}
             />
-          )}
-        />
-        <List.Item
-          title="Bildirim Sesi"
-          description="Kapalıyken bildirimler yalnızca yazılı gelir, ses/titreşim olmaz"
-          right={() => (
-            <Switch
-              value={preferences?.soundEnabled ?? true}
-              onValueChange={() => togglePreference("soundEnabled")}
+            <List.Item
+              title="Bildirim Sesi"
+              description="Kapalıyken bildirimler yalnızca yazılı gelir, ses/titreşim olmaz"
+              right={() => (
+                <Switch
+                  value={preferences?.soundEnabled ?? true}
+                  onValueChange={() => togglePreference("soundEnabled")}
+                />
+              )}
             />
-          )}
-        />
-        <Button
-          mode="outlined"
-          onPress={handleSendTestNotification}
-          loading={isSendingTestNotification}
-          style={{ marginHorizontal: 16, marginTop: 4 }}
-        >
-          Test Bildirimi Gönder (5 sn)
+            <Button
+              mode="outlined"
+              onPress={handleSendTestNotification}
+              loading={isSendingTestNotification}
+              style={{ marginHorizontal: 16, marginTop: 4, marginBottom: 8 }}
+            >
+              Test Bildirimi Gönder (5 sn)
+            </Button>
+            {testNotificationStatus ? (
+              <HelperText type="info" style={{ marginHorizontal: 16 }}>
+                {testNotificationStatus}
+              </HelperText>
+            ) : null}
+          </SectionCard>
+
+          <SectionCard title="Veri Yönetimi">
+            <List.Item
+              title="Verilerimi Dışa Aktar"
+              description="Vanity, Loops ve Journal kayıtlarını JSON olarak indir"
+            />
+            <Button
+              mode="outlined"
+              onPress={handleExport}
+              loading={isExporting}
+              style={{ marginHorizontal: 16, marginBottom: 8 }}
+            >
+              Dışa Aktar
+            </Button>
+            {exportError ? (
+              <HelperText type="error" style={{ marginHorizontal: 16 }}>
+                {exportError}
+              </HelperText>
+            ) : null}
+          </SectionCard>
+
+          <SectionCard title="Tehlikeli Bölge">
+            <List.Item
+              title="Hesabımı ve Verilerimi Sil"
+              description="Bu işlem geri alınamaz — tüm sunucu verisi ve cihazdaki Journal fotoğrafları kalıcı olarak silinir (KVKK/GDPR)"
+            />
+            <Button
+              mode="contained"
+              buttonColor={theme.colors.error}
+              onPress={() => setIsDeleteDialogVisible(true)}
+              style={{ marginHorizontal: 16, marginBottom: 16 }}
+            >
+              Hesabı Sil
+            </Button>
+          </SectionCard>
+
+        <Button mode="text" onPress={() => signOut()}>
+          Çıkış Yap
         </Button>
-        {testNotificationStatus ? (
-          <HelperText type="info" style={{ marginHorizontal: 16 }}>
-            {testNotificationStatus}
-          </HelperText>
-        ) : null}
-      </List.Section>
-
-      <Divider />
-
-      <List.Section title="Veri Yönetimi">
-        <List.Item
-          title="Verilerimi Dışa Aktar"
-          description="Vanity, Loops ve Journal kayıtlarını JSON olarak indir"
-        />
-        <Button mode="outlined" onPress={handleExport} loading={isExporting} style={{ marginHorizontal: 16 }}>
-          Dışa Aktar
-        </Button>
-        {exportError ? (
-          <HelperText type="error" style={{ marginHorizontal: 16 }}>
-            {exportError}
-          </HelperText>
-        ) : null}
-      </List.Section>
-
-      <Divider />
-
-      <List.Section title="Tehlikeli Bölge">
-        <List.Item
-          title="Hesabımı ve Verilerimi Sil"
-          description="Bu işlem geri alınamaz — tüm sunucu verisi ve cihazdaki Journal fotoğrafları kalıcı olarak silinir (KVKK/GDPR)"
-        />
-        <Button
-          mode="contained"
-          buttonColor={theme.colors.error}
-          onPress={() => setIsDeleteDialogVisible(true)}
-          style={{ marginHorizontal: 16 }}
-        >
-          Hesabı Sil
-        </Button>
-      </List.Section>
+      </ScrollView>
 
       <Portal>
         <Dialog visible={isDeleteDialogVisible} onDismiss={() => setIsDeleteDialogVisible(false)}>
@@ -219,12 +298,6 @@ export default function SettingsScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-
-      <View style={{ marginTop: 16 }}>
-        <Button mode="text" onPress={() => signOut()}>
-          Çıkış Yap
-        </Button>
-      </View>
-    </ScrollView>
+    </AmbientBackground>
   );
 }

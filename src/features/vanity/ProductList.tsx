@@ -9,9 +9,11 @@ import type { Id } from "@convex/_generated/dataModel";
 import type { Category } from "@/constants/categories";
 import { EditProductDialog, type EditableProduct } from "@/features/vanity/EditProductDialog";
 import { ProductCard } from "@/features/vanity/ProductCard";
+import { useBottomClearance } from "@/hooks/useBottomClearance";
 
 export function ProductList() {
   const theme = useTheme();
+  const bottomClearance = useBottomClearance();
   const products = useQuery(api.products.listProducts);
   const deleteProduct = useMutation(api.products.deleteProduct);
 
@@ -50,7 +52,7 @@ export function ProductList() {
       <FlatList
         data={products}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: bottomClearance, gap: 12 }}
         renderItem={({ item }) => (
           <ProductCard
             name={item.name}

@@ -4,7 +4,10 @@ import { useCallback, useState } from "react";
 import { FlatList, View } from "react-native";
 import { Button, Card, Checkbox, Chip, Dialog, IconButton, Portal, Text, useTheme } from "react-native-paper";
 
+import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { EditJournalEntryDialog } from "@/features/journal/EditJournalEntryDialog";
+import { useBottomClearance } from "@/hooks/useBottomClearance";
+import { CARD_RADIUS, ELEVATED_SHADOW } from "@/theme/theme";
 import {
   deleteJournalEntries,
   listJournalEntries,
@@ -32,6 +35,8 @@ function formatDate(epochMs: number): string {
 export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) {
   const theme = useTheme();
   const router = useRouter();
+  const userId = useCurrentUserId();
+  const bottomClearance = useBottomClearance();
   const [items, setItems] = useState<JournalEntry[] | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -40,10 +45,13 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
 
   const load = useCallback(async () => {
-    const entries = await listJournalEntries();
+    if (!userId) {
+      return;
+    }
+    const entries = await listJournalEntries(userId);
     const filtered = loopId ? entries.filter((entry) => entry.loopId === loopId) : entries;
     setItems(filtered);
-  }, [loopId]);
+  }, [userId, loopId]);
 
   // Ekran her odaklandığında (ör. fotoğraf çekip geri dönüldüğünde) listeyi tazeler.
   useFocusEffect(
@@ -71,9 +79,12 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
   }
 
   async function handleConfirmDelete() {
+    if (!userId) {
+      return;
+    }
     setIsDeleting(true);
     try {
-      await deleteJournalEntries(selectedIds);
+      await deleteJournalEntries(userId, selectedIds);
       await load();
       setIsDeleteDialogVisible(false);
       exitSelection();
@@ -107,7 +118,7 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
   const allSelected = items.length > 0 && selectedIds.length === items.length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1 }}>
       {items.length > 0 ? (
         <View style={{ gap: 8, padding: 12 }}>
           <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
@@ -162,12 +173,18 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
           data={items}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          contentContainerStyle={{ padding: 12, gap: 12 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: bottomClearance, gap: 12 }}
           columnWrapperStyle={{ gap: 12 }}
           renderItem={({ item }) => (
             <Card
               mode="elevated"
-              style={{ flex: 1, borderRadius: 16, overflow: "hidden" }}
+              style={{
+                flex: 1,
+                borderRadius: CARD_RADIUS,
+                overflow: "hidden",
+                backgroundColor: theme.colors.surface,
+                ...ELEVATED_SHADOW,
+              }}
               onPress={isSelecting ? () => toggleSelect(item.id) : undefined}
             >
               <View>
@@ -209,12 +226,12 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
                   </View>
                 )}
               </View>
-              <Card.Content style={{ paddingVertical: 8, gap: 4 }}>
+              <Card.Content style={{ paddingVertical: 10, gap: 4 }}>
                 <Chip
                   compact
                   icon="calendar-outline"
-                  style={{ alignSelf: "flex-start", backgroundColor: theme.colors.secondaryContainer }}
-                  textStyle={{ fontSize: 11 }}
+                  style={{ alignSelf: "flex-start", backgroundColor: theme.colors.tertiaryContainer }}
+                  textStyle={{ fontSize: 11, color: theme.colors.onTertiaryContainer, fontWeight: "600" }}
                 >
                   {formatDate(item.date)}
                 </Chip>
@@ -235,6 +252,7 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
       )}
 
       <EditJournalEntryDialog
+        userId={userId}
         entry={editingEntry}
         loopNames={loopNames}
         onDismiss={() => setEditingEntry(null)}

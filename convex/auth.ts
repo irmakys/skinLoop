@@ -6,6 +6,7 @@ import type { WithoutSystemFields } from "convex/server";
 
 import type { Doc } from "./_generated/dataModel";
 import { KVKK_CONSENT_VERSION } from "./legalConsent";
+import { computeSignupProof } from "./signupProof";
 
 type UserProfile = WithoutSystemFields<Doc<"users">> & { email: string };
 
@@ -14,13 +15,18 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     Password({
       id: "password",
       /**
-       * Her akış (signUp/signIn/reset/...) için çağrılır, ama yalnızca
-       * `flow === "signUp"` sırasında dönen değer hesap oluşturmak için
-       * kullanılır (bkz. node_modules/@convex-dev/auth/src/providers/Password.ts).
-       * `kvkkConsent !== true` ise burada throw edilir — bu, `createAccount`
-       * çağrılmadan ÖNCE gerçekleşir, yani onay olmadan sunucuda hesap
-       * oluşturulması fiilen imkânsızdır (istemcideki disabled/uyarı kontrolü
-       * yalnızca UX içindir, asıl garanti burada).
+       * Her akış (signUp/signIn/reset/...) için çağrılır. `@convex-dev/auth`
+       * bu callback'i SENKRON çağırıyor (await edilmiyor —
+       * node_modules/@convex-dev/auth/dist/providers/Password.js:56), bu
+       * yüzden veritabanına erişilemiyor. Ölçtüm: `callbacks.beforeSessionCreation`
+       * gibi async hook'larda throw etmek daha önce oluşturulmuş
+       * users/authAccounts satırlarını GERİ ALMIYOR (createAccount ayrı bir
+       * mutation'da commit ediyor) — yetim, parola hash'i barındıran hesap
+       * satırları kalıyor. Bu yüzden e-posta OTP kontrolü burada, hesap
+       * oluşturulmadan ÖNCEKİ tek senkron adımda, deterministik bir imza
+       * karşılaştırmasıyla yapılıyor (bkz. convex/signupProof.ts) — `throw`
+       * burada `createAccount` çağrılmadan önce gerçekleştiği için hiçbir
+       * satır asla yazılmıyor.
        */
       profile(params): UserProfile {
         const email = params.email as string;
@@ -32,11 +38,19 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           throw new Error("KVKK_CONSENT_REQUIRED");
         }
 
+        const expectedProof = computeSignupProof(email);
+        if (params.signupProof !== expectedProof) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
+
         return {
           email,
           kvkkConsent: true,
           kvkkConsentDate: new Date().toISOString(),
           kvkkConsentVersion: KVKK_CONSENT_VERSION,
+          // E-posta hesap oluşturulmadan önce zaten OTP ile doğrulandı
+          // (bkz. convex/emailVerification.ts).
+          isEmailVerified: true,
         };
       },
     }),

@@ -48,6 +48,43 @@ export const CARD_SHADOW = {
   elevation: 2,
 } as const;
 
+/** `#RRGGBB` rengini `rgba(...)`'ya çevirir — yarı saydam yüzeyler (buzlu cam tab bar, degrade blob'lar) için. */
+export function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace("#", "");
+  const r = parseInt(normalized.substring(0, 2), 16);
+  const g = parseInt(normalized.substring(2, 4), 16);
+  const b = parseInt(normalized.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** FAB'ın sabit alt sekme çubuğunun hemen üzerinde durması için taban `bottom` değeri —
+ * cihazın gerçek alt güvenli alanı (`insets.bottom`) her kullanım yerinde ayrıca eklenir. */
+export const FAB_BOTTOM_OFFSET = 16;
+
+/** Daha belirgin, "kaldırılmış" kartlar için (ör. üst başlık bloğu, öne çıkan istatistik kartları). */
+export const ELEVATED_SHADOW = {
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.14,
+  shadowRadius: 20,
+  elevation: 8,
+} as const;
+
+/**
+ * Üst başlık bloğu ve öne çıkan vurgu alanları için iki durak (2-stop)
+ * degrade renkleri — düz `primary` doldurma yerine hafif bir derinlik/hareket
+ * hissi verir. Her tema kendi paletine uygun, primary'den bir ton daha
+ * doygun/koyu bir ikinci durakla eşleşir.
+ */
+export const THEME_GRADIENTS: Record<ThemeId, [string, string]> = {
+  "soft-peach": ["#E6A08F", "#C9635A"],
+  "earthy-beige": ["#B79A79", "#8F7455"],
+  "cloud-blue": ["#7EA0D6", "#4863E0"],
+  "sage-fresh": ["#7CA982", "#3D7350"],
+  "crimson-velvet": ["#C33E44", "#7E2022"],
+  "deep-dark": ["#6E5CE0", "#8C7BF0"],
+};
+
 /** Pudra & Şeftali — varsayılan tema. Kirli beyaz zemin, pudra pembesi/şeftali aksanlar. */
 const softPeachTheme: MD3Theme = {
   ...MD3LightTheme,

@@ -1,5 +1,10 @@
+import { AmbientBackground } from "@/components/AmbientBackground";
 import { DailyPlanner } from "@/features/planner/DailyPlanner";
 
 export default function PlannerScreen() {
-  return <DailyPlanner />;
+  return (
+    <AmbientBackground>
+      <DailyPlanner />
+    </AmbientBackground>
+  );
 }

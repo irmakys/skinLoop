@@ -5,6 +5,7 @@ import { Button, Chip, Dialog, HelperText, Portal, Text, TextInput } from "react
 import { updateJournalEntry, type JournalEntry } from "@/lib/journalStorage";
 
 type EditJournalEntryDialogProps = {
+  userId: string | null;
   entry: JournalEntry | null;
   /** loopId -> Loop adı — rutin etiketi seçenekleri için. */
   loopNames: Record<string, string>;
@@ -13,7 +14,7 @@ type EditJournalEntryDialogProps = {
 };
 
 /** Bir Journal fotoğrafının notunu ve bağlı olduğu rutin etiketini düzenlemek için diyalog. */
-export function EditJournalEntryDialog({ entry, loopNames, onDismiss, onSaved }: EditJournalEntryDialogProps) {
+export function EditJournalEntryDialog({ userId, entry, loopNames, onDismiss, onSaved }: EditJournalEntryDialogProps) {
   const [note, setNote] = useState("");
   const [loopId, setLoopId] = useState<string | null>(null);
   const [loadedEntryId, setLoadedEntryId] = useState<string | null>(null);
@@ -28,12 +29,12 @@ export function EditJournalEntryDialog({ entry, loopNames, onDismiss, onSaved }:
   }
 
   async function handleSave() {
-    if (!entry) {
+    if (!entry || !userId) {
       return;
     }
     setIsSaving(true);
     try {
-      await updateJournalEntry(entry.id, { note: note.trim() || null, loopId });
+      await updateJournalEntry(userId, entry.id, { note: note.trim() || null, loopId });
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kaydedilemedi.");

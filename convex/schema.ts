@@ -37,9 +37,33 @@ export default defineSchema({
     kvkkConsentDate: v.optional(v.string()),
     /** Onaylanan metin sürümü (bkz. convex/legalConsent.ts). */
     kvkkConsentVersion: v.optional(v.string()),
+    /**
+     * E-posta OTP doğrulaması (sahte hesapları engellemek için). Şifreyle
+     * kayıt akışı artık hesap oluşturulmadan ÖNCE e-postayı doğruluyor
+     * (bkz. convex/emailVerification.ts + convex/auth.ts Password
+     * `profile` callback'i) — yani hesap her zaman `true` ile oluşur, bu
+     * alan yalnızca bilgi amaçlıdır ve hiçbir yerde erişim engellemek için
+     * kullanılmaz. Google/Apple'da da e-posta sağlayıcı tarafından zaten
+     * doğrulanmış kabul edilir.
+     */
+    isEmailVerified: v.optional(v.boolean()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
+
+  /**
+   * Kayıt akışının e-posta doğrulama adımı — HENÜZ hesabı olmayan bir
+   * e-posta için OTP tutar (kullanıcıya değil, e-postaya bağlıdır). Hesap
+   * yalnızca burada `verified:true` olan bir kayıt varsa oluşturulabilir
+   * (bkz. convex/auth.ts Password `profile` callback'i); başarılı kayıttan
+   * hemen sonra silinir.
+   */
+  emailVerificationRequests: defineTable({
+    email: v.string(),
+    otp: v.string(),
+    otpExpiresAt: v.number(),
+    verified: v.boolean(),
+  }).index("by_email", ["email"]),
 
   /**
    * Paylaşılan barkod→ürün kataloğu (kullanıcıya özel değil — bir barkod

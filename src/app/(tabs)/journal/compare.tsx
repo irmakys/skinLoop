@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Card, Chip, Text, useTheme } from "react-native-paper";
 
+import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { listJournalEntries, type JournalEntry } from "@/lib/journalStorage";
 
 function formatDate(epochMs: number): string {
@@ -43,14 +44,21 @@ function ComparisonColumn({ label, entry }: { label: string; entry: JournalEntry
 export default function CompareScreen() {
   const theme = useTheme();
   const { before, after } = useLocalSearchParams<{ before: string; after: string }>();
+  const userId = useCurrentUserId();
   const [beforeEntry, setBeforeEntry] = useState<JournalEntry | null>(null);
   const [afterEntry, setAfterEntry] = useState<JournalEntry | null>(null);
 
   useEffect(() => {
+    if (!userId) {
+      return;
+    }
     let cancelled = false;
 
     async function load() {
-      const entries = await listJournalEntries();
+      if (!userId) {
+        return;
+      }
+      const entries = await listJournalEntries(userId);
       if (cancelled) {
         return;
       }
@@ -63,7 +71,7 @@ export default function CompareScreen() {
     return () => {
       cancelled = true;
     };
-  }, [before, after]);
+  }, [userId, before, after]);
 
   return (
     <ScrollView

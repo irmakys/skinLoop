@@ -1,10 +1,13 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
 
 import { CATEGORY_ICONS, CATEGORY_LABELS_TR, type Category } from "@/constants/categories";
-import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
+import { useAppTheme } from "@/theme/ThemeContext";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS } from "@/theme/theme";
 
 type ProductCardProps = {
   name: string;
@@ -49,6 +52,7 @@ function PillBadge({
  */
 export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit, onDelete }: ProductCardProps) {
   const theme = useTheme();
+  const { themeId } = useAppTheme();
   // eslint-disable-next-line react-hooks/purity -- süresi dolmuş rozetini göstermek için render anındaki zaman yeterli
   const isExpired = expiresAt < Date.now();
 
@@ -57,25 +61,24 @@ export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit,
       onPress={onPress}
       style={[
         styles.card,
-        CARD_SHADOW,
+        ELEVATED_SHADOW,
         { backgroundColor: theme.colors.surface, borderRadius: CARD_RADIUS },
       ]}
     >
-      <View
-        style={[
-          styles.iconBadge,
-          { backgroundColor: theme.colors.primaryContainer, borderRadius: CARD_RADIUS / 1.6 },
-        ]}
+      <LinearGradient
+        colors={THEME_GRADIENTS[themeId]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.iconBadge, { borderRadius: CARD_RADIUS / 1.6 }]}
       >
-        <MaterialCommunityIcons
-          name={CATEGORY_ICONS[category]}
-          size={24}
-          color={theme.colors.onPrimaryContainer}
-        />
-      </View>
+        <MaterialCommunityIcons name={CATEGORY_ICONS[category]} size={24} color="#FFFFFF" />
+      </LinearGradient>
 
       <View style={{ flex: 1, gap: 4 }}>
-        <Text variant="titleMedium" style={{ fontWeight: "700", color: theme.colors.onSurface }} numberOfLines={1}>
+        <Text
+          style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 16, color: theme.colors.onSurface }}
+          numberOfLines={1}
+        >
           {name}
         </Text>
         {brand ? (

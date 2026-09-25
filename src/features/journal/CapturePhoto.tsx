@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, HelperText, IconButton, Text, TextInput } from "react-native-paper";
 
+import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { addJournalEntry } from "@/lib/journalStorage";
 import { saveToDeviceGallery } from "@/lib/mediaLibrary";
 
@@ -14,6 +15,7 @@ type CapturePhotoProps = {
 };
 
 export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
+  const userId = useCurrentUserId();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>("back");
@@ -37,7 +39,7 @@ export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
   }
 
   async function handleCapture() {
-    if (isCapturing) {
+    if (isCapturing || !userId) {
       return;
     }
     setError(null);
@@ -54,7 +56,7 @@ export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
       capturedFile = new File(picture.uri);
 
       // Kaynak: uygulamanın kendi yerel dosya sistemi (Paths.document/journal) — Journal'ın tek doğruluk kaynağı.
-      await addJournalEntry(picture.uri, note.trim() || null, loopId ?? null);
+      await addJournalEntry(userId, picture.uri, note.trim() || null, loopId ?? null);
 
       // Kullanıcının isteğiyle: ayrıca sistem galerisine de kopya bırakılıyor.
       // Yerel kayıt (yukarıda) zaten tamamlandığından, galeri hatası akışı bloklamaz —

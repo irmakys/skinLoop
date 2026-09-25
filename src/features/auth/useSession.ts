@@ -1,4 +1,6 @@
+import { api } from "@convex/_generated/api";
 import { useAuthActions, useConvexAuth } from "@convex-dev/auth/react";
+import { useAction, useMutation } from "convex/react";
 
 import { signInWithOAuth } from "@/lib/authOAuth";
 
@@ -17,6 +19,12 @@ function toFriendlyAuthError(error: unknown): Error {
   if (/KVKK_CONSENT_REQUIRED/i.test(raw)) {
     return new Error("Devam etmeden önce KVKK metnini ve kullanıcı sözleşmesini onaylamalısın.");
   }
+  if (/EMAIL_NOT_VERIFIED/i.test(raw)) {
+    return new Error("E-postanı doğrulamadan hesap oluşturulamaz.");
+  }
+  if (/EMAIL_ALREADY_REGISTERED/i.test(raw)) {
+    return new Error("Bu e-posta zaten kayıtlı. Giriş yapmayı dene.");
+  }
   if (/OAuth-cancelled/i.test(raw)) {
     return new Error("Giriş iptal edildi.");
   }
@@ -32,14 +40,23 @@ function toFriendlyAuthError(error: unknown): Error {
 
 const DEV_TEST_EMAIL = "test@skinloop.dev";
 const DEV_TEST_PASSWORD = "test1234";
+const DEV_TEST_OTP_CODE = "123456";
 
 export function useSession() {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
+  const requestSignupOtp = useAction(api.emailVerification.requestSignupOtp);
+  const verifySignupOtp = useMutation(api.emailVerification.verifySignupOtp);
 
-  async function signUpWithPassword(email: string, password: string, kvkkConsent: boolean) {
+  /** E-posta OTP ile önceden doğrulanmış olmalı — bkz. requestSignupOtp/verifySignupOtp ve convex/auth.ts. */
+  async function signUpWithPassword(
+    email: string,
+    password: string,
+    kvkkConsent: boolean,
+    signupProof: string,
+  ) {
     try {
-      await signIn("password", { email, password, flow: "signUp", kvkkConsent });
+      await signIn("password", { email, password, flow: "signUp", kvkkConsent, signupProof });
     } catch (error) {
       throw toFriendlyAuthError(error);
     }
@@ -71,7 +88,11 @@ export function useSession() {
 
   /**
    * Yalnızca geliştirme ortamında: sabit bir test hesabıyla tek tıkla giriş.
-   * Hesap yoksa otomatik oluşturur, varsa doğrudan giriş yapar.
+   * Hesap yoksa, gerçek akışın aynısını (OTP iste → sabit test koduyla
+   * doğrula → imzayla kaydol) otomatik yürüterek oluşturur — böylece bu
+   * kısayol, `convex/auth.ts`'teki zorunlu e-posta doğrulamasını atlamaz,
+   * yalnızca kod girme adımını otomatikleştirir. `OTP_TEST_BYPASS` env
+   * değişkeni bu dev dağıtımında açık olduğu için çalışır.
    */
   async function signInAsTestUser() {
     try {
@@ -81,12 +102,14 @@ export function useSession() {
         flow: "signIn",
       });
     } catch {
-      // Geliştirme kolaylığı: hızlı test girişi için onayı otomatik veriyoruz.
+      await requestSignupOtp({ email: DEV_TEST_EMAIL });
+      const result = await verifySignupOtp({ email: DEV_TEST_EMAIL, code: DEV_TEST_OTP_CODE });
       await signIn("password", {
         email: DEV_TEST_EMAIL,
         password: DEV_TEST_PASSWORD,
         flow: "signUp",
         kvkkConsent: true,
+        signupProof: result.proof,
       });
     }
   }

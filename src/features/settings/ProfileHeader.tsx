@@ -4,12 +4,15 @@ import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps } from "react";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { ActivityIndicator, Button, Dialog, HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
 
-import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS } from "@/theme/theme";
+import { useAppTheme } from "@/theme/ThemeContext";
 
 const AVATAR_SIZE = 88;
 
@@ -49,6 +52,7 @@ function StatItem({
 
 export function ProfileHeader() {
   const theme = useTheme();
+  const { themeId } = useAppTheme();
   const user = useQuery(api.users.getCurrentUser);
   const stats = useQuery(api.users.getProfileStats);
   const updateProfileName = useMutation(api.users.updateProfileName);
@@ -130,35 +134,48 @@ export function ProfileHeader() {
         padding: 20,
         alignItems: "center",
         gap: 12,
-        ...CARD_SHADOW,
+        ...ELEVATED_SHADOW,
       }}
     >
       <Pressable onPress={handlePickAvatar} disabled={isUploadingAvatar}>
-        <View
+        <LinearGradient
+          colors={THEME_GRADIENTS[themeId]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={{
-            width: AVATAR_SIZE,
-            height: AVATAR_SIZE,
-            borderRadius: AVATAR_SIZE / 2,
-            backgroundColor: theme.colors.primaryContainer,
+            width: AVATAR_SIZE + 6,
+            height: AVATAR_SIZE + 6,
+            borderRadius: (AVATAR_SIZE + 6) / 2,
             alignItems: "center",
             justifyContent: "center",
-            overflow: "hidden",
           }}
         >
-          {isUploadingAvatar ? (
-            <ActivityIndicator color={theme.colors.primary} />
-          ) : user?.image ? (
-            <Image
-              source={{ uri: user.image }}
-              style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
-              contentFit="cover"
-            />
-          ) : (
-            <Text variant="headlineSmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: "700" }}>
-              {initialsFor(user?.name ?? null, user?.email ?? null)}
-            </Text>
-          )}
-        </View>
+          <View
+            style={{
+              width: AVATAR_SIZE,
+              height: AVATAR_SIZE,
+              borderRadius: AVATAR_SIZE / 2,
+              backgroundColor: theme.colors.primaryContainer,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            {isUploadingAvatar ? (
+              <ActivityIndicator color={theme.colors.primary} />
+            ) : user?.image ? (
+              <Image
+                source={{ uri: user.image }}
+                style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
+                contentFit="cover"
+              />
+            ) : (
+              <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 28, color: theme.colors.onPrimaryContainer }}>
+                {initialsFor(user?.name ?? null, user?.email ?? null)}
+              </Text>
+            )}
+          </View>
+        </LinearGradient>
         <View
           style={{
             position: "absolute",
@@ -183,7 +200,7 @@ export function ProfileHeader() {
         onPress={openNameDialog}
         style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
       >
-        <Text variant="titleLarge" style={{ fontWeight: "700", color: theme.colors.onSurface }}>
+        <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color: theme.colors.onSurface }}>
           {user?.name?.trim() || "İsimsiz Kullanıcı"}
         </Text>
         <MaterialCommunityIcons name="pencil-outline" size={16} color={theme.colors.onSurfaceVariant} />

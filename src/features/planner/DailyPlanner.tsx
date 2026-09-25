@@ -1,23 +1,21 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useMutation, useQuery } from "convex/react";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
-import {
-  Card,
-  Checkbox,
-  Chip,
-  IconButton,
-  ProgressBar,
-  Switch,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import type * as React from "react";
+import { Pressable, ScrollView, View } from "react-native";
+import { Chip, IconButton, Switch, Text, useTheme } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
+import { CircularProgress } from "@/components/CircularProgress";
 import { DayStrip } from "@/features/planner/DayStrip";
 import { MonthCalendarDialog } from "@/features/planner/MonthCalendarDialog";
 import { getWeekDates, toDayKey } from "@/lib/dateKeys";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS, hexToRgba } from "@/theme/theme";
+import { useAppTheme } from "@/theme/ThemeContext";
+import { useBottomClearance } from "@/hooks/useBottomClearance";
 
 type LoopWithSteps = Doc<"loops"> & { steps: Doc<"loopSteps">[] };
 
@@ -26,6 +24,13 @@ const LOOP_TYPE_LABELS_TR: Record<string, string> = {
   evening: "Akşam Rutini",
   weekly: "Haftalık",
   monthly: "Aylık",
+};
+
+const LOOP_TYPE_ICONS: Record<string, React.ComponentProps<typeof MaterialCommunityIcons>["name"]> = {
+  morning: "weather-sunny",
+  evening: "weather-night",
+  weekly: "calendar-week",
+  monthly: "calendar-month-outline",
 };
 
 function LoopSection({
@@ -42,36 +47,89 @@ function LoopSection({
   onToggleStep: (stepId: Id<"loopSteps">) => void;
 }) {
   const theme = useTheme();
+  const { themeId } = useAppTheme();
   const steps = lazyMode ? loop.steps.filter((step) => !step.isOptional) : loop.steps;
 
   if (steps.length === 0) {
     return null;
   }
 
+  const doneCount = steps.filter((step) => completedStepIds.has(step._id)).length;
+
   return (
-    <Card mode="elevated" style={{ borderRadius: 16 }}>
-      <Card.Content style={{ gap: 4 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text variant="titleMedium" style={{ fontWeight: "700", flex: 1 }}>
+    <View
+      style={{
+        borderRadius: CARD_RADIUS,
+        backgroundColor: theme.colors.surface,
+        padding: 18,
+        gap: 12,
+        ...ELEVATED_SHADOW,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <LinearGradient
+          colors={THEME_GRADIENTS[themeId]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 44, height: 44, borderRadius: 16, alignItems: "center", justifyContent: "center" }}
+        >
+          <MaterialCommunityIcons name={LOOP_TYPE_ICONS[loop.type]} size={22} color="#FFFFFF" />
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 17, color: theme.colors.onSurface }}
+            numberOfLines={1}
+          >
             {loop.name}
           </Text>
-          <Chip compact style={{ backgroundColor: theme.colors.secondaryContainer }} textStyle={{ fontSize: 11 }}>
-            {LOOP_TYPE_LABELS_TR[loop.type]}
-          </Chip>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            {LOOP_TYPE_LABELS_TR[loop.type]} · {doneCount}/{steps.length} tamamlandı
+          </Text>
         </View>
+      </View>
 
+      <View style={{ gap: 6 }}>
         {steps.map((step, index) => {
           const product = productsById.get(step.productId);
           const completed = completedStepIds.has(step._id);
 
           return (
-            <View key={step._id} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Checkbox
-                status={completed ? "checked" : "unchecked"}
-                disabled={step.missingProduct}
-                onPress={() => onToggleStep(step._id)}
-              />
-              <Text style={{ flex: 1 }} numberOfLines={1}>
+            <Pressable
+              key={step._id}
+              disabled={step.missingProduct}
+              onPress={() => onToggleStep(step._id)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+                borderRadius: 14,
+                backgroundColor: completed ? hexToRgba(THEME_GRADIENTS[themeId][0], 0.12) : "transparent",
+              }}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: completed ? THEME_GRADIENTS[themeId][1] : "transparent",
+                  borderWidth: completed ? 0 : 1.5,
+                  borderColor: theme.colors.outlineVariant,
+                }}
+              >
+                {completed ? <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" /> : null}
+              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  color: completed ? theme.colors.onSurfaceVariant : theme.colors.onSurface,
+                  textDecorationLine: completed ? "line-through" : "none",
+                }}
+                numberOfLines={1}
+              >
                 {index + 1}. {step.missingProduct ? "Ürün eksik" : (product?.name ?? "…")}
               </Text>
               {step.isOptional ? (
@@ -79,16 +137,18 @@ function LoopSection({
                   Opsiyonel
                 </Chip>
               ) : null}
-            </View>
+            </Pressable>
           );
         })}
-      </Card.Content>
-    </Card>
+      </View>
+    </View>
   );
 }
 
 export function DailyPlanner() {
   const theme = useTheme();
+  const { themeId } = useAppTheme();
+  const bottomClearance = useBottomClearance();
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [lazyMode, setLazyMode] = useState(false);
   const [monthCalendarVisible, setMonthCalendarVisible] = useState(false);
@@ -143,7 +203,7 @@ export function DailyPlanner() {
   const otherLoops = loops.filter((loop) => loop.type === "weekly" || loop.type === "monthly");
 
   return (
-    <ScrollView style={{ backgroundColor: theme.colors.background }} contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
+    <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: bottomClearance + 24 }}>
       <View style={{ paddingTop: 16, flexDirection: "row", alignItems: "center" }}>
         <View style={{ flex: 1 }}>
           <DayStrip weekDates={weekDates} selectedDate={selectedDate} onSelect={setSelectedDate} />
@@ -213,19 +273,36 @@ export function DailyPlanner() {
       )}
 
       {weeklyScore !== null ? (
-        <Card mode="elevated" style={{ marginHorizontal: 16, borderRadius: 16 }}>
-          <Card.Content style={{ gap: 8 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text variant="titleMedium" style={{ fontWeight: "700" }}>
-                Haftalık Uyum Skoru
-              </Text>
-              <Text variant="headlineSmall" style={{ color: theme.colors.primary, fontWeight: "700" }}>
-                %{weeklyScore}
-              </Text>
-            </View>
-            <ProgressBar progress={weeklyScore / 100} color={theme.colors.primary} style={{ borderRadius: 4 }} />
-          </Card.Content>
-        </Card>
+        <View
+          style={{
+            marginHorizontal: 16,
+            borderRadius: CARD_RADIUS,
+            backgroundColor: theme.colors.surface,
+            padding: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 20,
+            ...ELEVATED_SHADOW,
+          }}
+        >
+          <CircularProgress
+            progress={weeklyScore / 100}
+            color={THEME_GRADIENTS[themeId]}
+            trackColor={theme.colors.surfaceVariant}
+          >
+            <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color: theme.colors.onSurface }}>
+              %{weeklyScore}
+            </Text>
+          </CircularProgress>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 18, color: theme.colors.onSurface }}>
+              Haftalık Uyum Skoru
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Bu hafta tamamladığın adımların rutinlerine oranı.
+            </Text>
+          </View>
+        </View>
       ) : null}
     </ScrollView>
   );
