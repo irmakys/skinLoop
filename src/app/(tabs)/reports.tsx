@@ -6,10 +6,10 @@ import { BarChart } from "react-native-gifted-charts";
 import { SegmentedButtons, Text, useTheme } from "react-native-paper";
 
 import { AmbientBackground } from "@/components/AmbientBackground";
+import { GlassCard } from "@/components/GlassCard";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
 import { toDayKey } from "@/lib/dateKeys";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
 
 type Range = "week" | "month";
 
@@ -28,22 +28,23 @@ function lastNDays(n: number): Date[] {
 function StatTile({ label, value, color }: { label: string; value: string | number; color: string }) {
   const theme = useTheme();
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.surface,
-        borderRadius: CARD_RADIUS,
-        padding: 14,
-        alignItems: "center",
-        gap: 4,
-        ...CARD_SHADOW,
-      }}
-    >
-      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color }}>{value}</Text>
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
+    <GlassCard padding={18} style={{ flex: 1, alignItems: "center", gap: 2 }}>
+      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 26, letterSpacing: -0.4, color }}>
+        {value}
+      </Text>
+      <Text
+        style={{
+          fontSize: 10.5,
+          fontWeight: "600",
+          letterSpacing: 0.3,
+          color: theme.colors.onSurfaceVariant,
+          textAlign: "center",
+          marginTop: 2,
+        }}
+      >
         {label}
       </Text>
-    </View>
+    </GlassCard>
   );
 }
 
@@ -100,7 +101,7 @@ export default function ReportsScreen() {
 
   return (
     <AmbientBackground>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomClearance, gap: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: bottomClearance, gap: 20 }}>
         <SegmentedButtons
           value={range}
           onValueChange={(value) => setRange(value as Range)}
@@ -110,15 +111,8 @@ export default function ReportsScreen() {
           ]}
         />
 
-        <View
-          style={{
-            backgroundColor: theme.colors.surface,
-            borderRadius: CARD_RADIUS,
-            padding: 20,
-            ...CARD_SHADOW,
-          }}
-        >
-          <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 18, color: theme.colors.onSurface, marginBottom: 16 }}>
+        <GlassCard padding={22}>
+          <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 19, color: theme.colors.onSurface, marginBottom: 18 }}>
             {range === "week" ? "Günlük Tamamlama" : "Haftalık Tamamlama"}
           </Text>
           {completions === undefined ? (
@@ -139,9 +133,9 @@ export default function ReportsScreen() {
               isAnimated
             />
           )}
-        </View>
+        </GlassCard>
 
-        <View style={{ flexDirection: "row", gap: 12 }}>
+        <View style={{ flexDirection: "row", gap: 14 }}>
           <StatTile label="Toplam Tamamlama" value={total} color={theme.colors.primary} />
           <StatTile
             label={range === "week" ? "En İyi Gün" : "En İyi Hafta"}

@@ -7,6 +7,8 @@ import { api } from "@convex/_generated/api";
 import { CATEGORY_LABELS_TR, type Category } from "@/constants/categories";
 import { CategoryPickerDialog } from "@/features/vanity/CategoryPickerDialog";
 import type { OpenBeautyFactsProduct } from "@/lib/openBeautyFacts";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS } from "@/theme/theme";
 
 type AddProductFormProps = {
   prefill?: OpenBeautyFactsProduct;
@@ -59,11 +61,16 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
-      <Text variant="headlineSmall">Ürün Ekle</Text>
-      <TextInput label="Ürün Adı" value={name} onChangeText={setName} />
-      <TextInput label="Marka" value={brand} onChangeText={setBrand} />
+      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, marginBottom: 4 }}>Ürün Ekle</Text>
+      <TextInput mode="outlined" label="Ürün Adı" value={name} onChangeText={setName} />
+      <TextInput mode="outlined" label="Marka" value={brand} onChangeText={setBrand} />
 
-      <Button mode="outlined" icon="chevron-down" onPress={() => setCategoryDialogVisible(true)}>
+      <Button
+        mode="outlined"
+        icon="chevron-down"
+        onPress={() => setCategoryDialogVisible(true)}
+        style={{ borderRadius: CARD_RADIUS }}
+      >
         {CATEGORY_LABELS_TR[category]}
       </Button>
       <CategoryPickerDialog
@@ -74,6 +81,7 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
       />
 
       <TextInput
+        mode="outlined"
         label="PAO (ay)"
         value={paoMonths}
         onChangeText={setPaoMonths}
@@ -82,7 +90,13 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
 
       {error ? <HelperText type="error">{error}</HelperText> : null}
 
-      <Button mode="contained" onPress={handleSubmit} loading={isSubmitting}>
+      <Button
+        mode="contained"
+        onPress={handleSubmit}
+        loading={isSubmitting}
+        style={{ borderRadius: CARD_RADIUS, marginTop: 8 }}
+        contentStyle={{ paddingVertical: 4 }}
+      >
         Kaydet
       </Button>
     </ScrollView>

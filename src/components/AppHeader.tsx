@@ -34,9 +34,9 @@ export function AppHeader({ title }: AppHeaderProps) {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{
-        paddingTop: insets.top + 10,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
+        paddingTop: insets.top + 14,
+        paddingBottom: 28,
+        paddingHorizontal: 24,
         borderBottomLeftRadius: CARD_RADIUS + 6,
         borderBottomRightRadius: CARD_RADIUS + 6,
         overflow: "hidden",
@@ -47,43 +47,56 @@ export function AppHeader({ title }: AppHeaderProps) {
         pointerEvents="none"
         style={{
           position: "absolute",
-          top: -40,
-          right: -30,
-          width: 140,
-          height: 140,
-          borderRadius: 70,
-          backgroundColor: "rgba(255,255,255,0.10)",
+          top: -50,
+          right: -40,
+          width: 170,
+          height: 170,
+          borderRadius: 85,
+          backgroundColor: "rgba(255,255,255,0.11)",
         }}
       />
       <View
         pointerEvents="none"
         style={{
           position: "absolute",
-          bottom: -50,
-          right: 60,
-          width: 90,
-          height: 90,
-          borderRadius: 45,
+          bottom: -60,
+          right: 50,
+          width: 100,
+          height: 100,
+          borderRadius: 50,
           backgroundColor: "rgba(255,255,255,0.07)",
         }}
       />
+      {/* Üstten alta hafifleyen ışık yansıması — camsı/parlak bir üst yüzey hissi */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "45%",
+          backgroundColor: "rgba(255,255,255,0.06)",
+        }}
+      />
 
-      <View style={{ gap: 6 }}>
+      <View style={{ gap: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Logo size={22} primaryColor={theme.colors.onPrimary} />
           <Text
             variant="labelLarge"
-            style={{ color: theme.colors.onPrimary, opacity: 0.85, letterSpacing: 1.2 }}
+            style={{ color: theme.colors.onPrimary, opacity: 0.85, letterSpacing: 1.4 }}
           >
-            SKINLOOP
+            BEAUTYLOOP
           </Text>
         </View>
         <Text
           style={{
             color: theme.colors.onPrimary,
             fontFamily: FONT_DISPLAY_BOLD,
-            fontSize: 30,
-            lineHeight: 36,
+            fontSize: 34,
+            letterSpacing: -0.3,
+            lineHeight: 39,
           }}
         >
           {title}

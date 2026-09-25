@@ -7,6 +7,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Button, Card, Chip, IconButton, Text, useTheme } from "react-native-paper";
 
+import { GlassCard } from "@/components/GlassCard";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { AddLoopStepDialog } from "@/features/loops/AddLoopStepDialog";
@@ -16,7 +17,7 @@ import { cancelReminder } from "@/lib/notifications";
 import { WEEKDAY_LABELS_TR } from "@/lib/dateKeys";
 import { useAppTheme } from "@/theme/ThemeContext";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS, hexToRgba } from "@/theme/theme";
+import { THEME_GRADIENTS, hexToRgba } from "@/theme/theme";
 
 const LOOP_TYPE_LABELS_TR: Record<string, string> = {
   morning: "Sabah",
@@ -116,19 +117,10 @@ export function LoopRunner() {
   const addStepLoop = loops.find((loop) => loop._id === addStepLoopId) ?? null;
 
   return (
-    <View style={{ padding: 16, gap: 12 }}>
+    <View style={{ padding: 20, gap: 16 }}>
       {loops.map((loop) => (
-        <Card
-          key={loop._id}
-          mode="elevated"
-          style={{
-            borderRadius: CARD_RADIUS,
-            backgroundColor: theme.colors.surface,
-            overflow: "hidden",
-            ...ELEVATED_SHADOW,
-          }}
-        >
-          <Card.Content style={{ gap: 4, paddingBottom: 8 }}>
+        <GlassCard key={loop._id} padding={0}>
+          <Card.Content style={{ gap: 4, paddingBottom: 8, paddingTop: 18 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <LinearGradient
                 colors={THEME_GRADIENTS[themeId]}
@@ -238,7 +230,7 @@ export function LoopRunner() {
               Ürün Ekle
             </Button>
           </Card.Content>
-        </Card>
+        </GlassCard>
       ))}
 
       <AddLoopStepDialog

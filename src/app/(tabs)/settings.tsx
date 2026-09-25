@@ -9,6 +9,7 @@ import { ScrollView, View } from "react-native";
 import { Button, Dialog, HelperText, List, Portal, Switch, Text, useTheme } from "react-native-paper";
 
 import { AmbientBackground } from "@/components/AmbientBackground";
+import { GlassCard } from "@/components/GlassCard";
 import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { useSession } from "@/features/auth/useSession";
 import { ProfileHeader } from "@/features/settings/ProfileHeader";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/preferences";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
+import { CARD_RADIUS, PREMIUM_ACCENT, glowShadow } from "@/theme/theme";
 
 const LEVEL_THRESHOLDS = [
   { min: 100, stars: 5, title: "Usta" },
@@ -37,22 +38,14 @@ function getSkincareLevel(totalCompletions: number): { stars: number; title: str
   return tier ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
 }
 
-/** Sert `Divider` çizgileri yerine, sayfayla bütünleşik yumuşak kart grupları. */
+/** Sert `Divider` çizgileri yerine, sayfayla bütünleşik yumuşak, camsı kart grupları. */
 function SectionCard({ title, children }: { title: string; children: ReactNode }) {
-  const theme = useTheme();
   return (
-    <View
-      style={{
-        backgroundColor: theme.colors.surface,
-        borderRadius: CARD_RADIUS,
-        overflow: "hidden",
-        ...CARD_SHADOW,
-      }}
-    >
+    <GlassCard padding={0}>
       <List.Section title={title} style={{ marginVertical: 0 }}>
         {children}
       </List.Section>
-    </View>
+    </GlassCard>
   );
 }
 
@@ -110,7 +103,7 @@ export default function SettingsScreen() {
     setIsExporting(true);
     try {
       const data = await convex.query(api.users.exportMyData, {});
-      const file = new File(Paths.cache, `skinloop-veri-${Date.now()}.json`);
+      const file = new File(Paths.cache, `beautyloop-veri-${Date.now()}.json`);
       file.create({ overwrite: true });
       file.write(JSON.stringify(data, null, 2));
 
@@ -146,35 +139,31 @@ export default function SettingsScreen() {
 
   return (
     <AmbientBackground>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomClearance, gap: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: bottomClearance, gap: 20 }}>
         <ProfileHeader />
 
-          <View
-            style={{
-              backgroundColor: theme.colors.surface,
-              borderRadius: CARD_RADIUS,
-              padding: 20,
-              gap: 14,
-              ...CARD_SHADOW,
-            }}
-          >
+          <GlassCard padding={22} accentColor={PREMIUM_ACCENT[1]} style={{ gap: 16 }}>
             <View>
               <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant }}>
                 Cilt Bakım Seviyen
               </Text>
-              <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color: theme.colors.onSurface }}>
+              <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, color: theme.colors.onSurface }}>
                 {level.title}
               </Text>
             </View>
-            <View style={{ flexDirection: "row", gap: 4 }}>
-              {Array.from({ length: 5 }, (_, index) => (
-                <MaterialCommunityIcons
-                  key={index}
-                  name={index < level.stars ? "star" : "star-outline"}
-                  size={28}
-                  color={index < level.stars ? theme.colors.tertiary : theme.colors.outlineVariant}
-                />
-              ))}
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              {Array.from({ length: 5 }, (_, index) => {
+                const filled = index < level.stars;
+                return (
+                  <View key={index} style={filled ? glowShadow(PREMIUM_ACCENT[1], 0.5) : undefined}>
+                    <MaterialCommunityIcons
+                      name={filled ? "star" : "star-outline"}
+                      size={28}
+                      color={filled ? PREMIUM_ACCENT[1] : theme.colors.outlineVariant}
+                    />
+                  </View>
+                );
+              })}
             </View>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Tamamladığın her rutin adımı seni bir sonraki seviyeye taşıyor — şu ana kadar{" "}
@@ -188,7 +177,7 @@ export default function SettingsScreen() {
             >
               Rutin Raporunu Gör
             </Button>
-          </View>
+          </GlassCard>
 
           <SectionCard title="Görünüm ve Tema">
             <ThemePicker />

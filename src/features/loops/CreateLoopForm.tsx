@@ -8,6 +8,8 @@ import type { Id } from "@convex/_generated/dataModel";
 import { isReminderStateValid, ReminderTimeEditor, type ReminderState } from "@/features/loops/ReminderTimeEditor";
 import { DEFAULT_LOOP_TIMES, scheduleLoopReminder } from "@/lib/notifications";
 import { getNotificationPreferences } from "@/lib/preferences";
+import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
+import { CARD_RADIUS } from "@/theme/theme";
 
 type LoopType = "morning" | "evening" | "weekly" | "monthly";
 
@@ -123,10 +125,8 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
-      <Text variant="headlineSmall" style={{ fontWeight: "700" }}>
-        Rutin Oluştur
-      </Text>
-      <TextInput label="Rutin Adı" value={name} onChangeText={setName} />
+      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, marginBottom: 4 }}>Rutin Oluştur</Text>
+      <TextInput mode="outlined" label="Rutin Adı" value={name} onChangeText={setName} />
 
       <Text variant="labelLarge">Sıklık</Text>
       <SegmentedButtons
@@ -170,7 +170,13 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
 
       {error ? <HelperText type="error">{error}</HelperText> : null}
 
-      <Button mode="contained" onPress={handleSubmit} loading={isSubmitting}>
+      <Button
+        mode="contained"
+        onPress={handleSubmit}
+        loading={isSubmitting}
+        style={{ borderRadius: CARD_RADIUS, marginTop: 8 }}
+        contentStyle={{ paddingVertical: 4 }}
+      >
         Kaydet
       </Button>
     </ScrollView>

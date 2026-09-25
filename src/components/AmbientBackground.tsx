@@ -1,3 +1,4 @@
+import { BlurView } from "expo-blur";
 import type { ReactNode } from "react";
 import { View, type ViewStyle } from "react-native";
 import { useTheme } from "react-native-paper";
@@ -28,37 +29,45 @@ export function AmbientBackground({ children, style }: AmbientBackgroundProps) {
         pointerEvents="none"
         style={{
           position: "absolute",
-          top: -90,
-          right: -70,
-          width: 280,
-          height: 280,
-          borderRadius: 140,
-          backgroundColor: hexToRgba(colorA, 0.16),
+          top: -130,
+          right: -110,
+          width: 420,
+          height: 420,
+          borderRadius: 210,
+          backgroundColor: hexToRgba(colorA, 0.22),
         }}
       />
       <View
         pointerEvents="none"
         style={{
           position: "absolute",
-          top: 260,
-          left: -110,
-          width: 220,
-          height: 220,
-          borderRadius: 110,
-          backgroundColor: hexToRgba(colorB, 0.12),
+          top: 300,
+          left: -150,
+          width: 340,
+          height: 340,
+          borderRadius: 170,
+          backgroundColor: hexToRgba(colorB, 0.18),
         }}
       />
       <View
         pointerEvents="none"
         style={{
           position: "absolute",
-          bottom: 40,
-          right: -90,
-          width: 240,
-          height: 240,
-          borderRadius: 120,
-          backgroundColor: hexToRgba(colorA, 0.09),
+          bottom: 20,
+          right: -130,
+          width: 340,
+          height: 340,
+          borderRadius: 170,
+          backgroundColor: hexToRgba(colorA, 0.14),
         }}
+      />
+      {/* Blob'ları gerçek anlamda "buzlu cam" hissi verecek şekilde bulanıklaştırır —
+          sert renk sınırları yerine yumuşak, huzurlu bir derinlik katmanı. */}
+      <BlurView
+        pointerEvents="none"
+        intensity={55}
+        tint={theme.dark ? "dark" : "light"}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
       {children}
     </View>

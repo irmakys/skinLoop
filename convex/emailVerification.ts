@@ -9,7 +9,7 @@ const OTP_VALIDITY_MS = 10 * 60 * 1000;
 /** Yalnızca `npx convex env set OTP_TEST_BYPASS true` ile açık olan dağıtımlarda geçerli sabit test kodu. Prod'da bu env değişkenini ASLA ayarlama. */
 const TEST_OTP_CODE = "123456";
 /** Resend'in özel alan adı doğrulaması gerektirmeyen varsayılan gönderici adresi. */
-const RESEND_FROM_ADDRESS = "skinLoop <onboarding@resend.dev>";
+const RESEND_FROM_ADDRESS = "BeautyLoop <onboarding@resend.dev>";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -23,7 +23,7 @@ function generateOtpCode(): string {
 function buildOtpEmailHtml(code: string): string {
   return `
     <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 420px; margin: 0 auto; color: #3A3532;">
-      <h2 style="margin-bottom: 4px;">skinLoop e-posta doğrulama</h2>
+      <h2 style="margin-bottom: 4px;">BeautyLoop e-posta doğrulama</h2>
       <p style="color: #6B615D;">Hesabını doğrulamak için aşağıdaki kodu uygulamaya gir:</p>
       <p style="font-size: 32px; font-weight: 700; letter-spacing: 6px; text-align: center; background: #F6DFDA; color: #4A231E; padding: 16px; border-radius: 16px;">${code}</p>
       <p style="color: #6B615D; font-size: 13px;">Bu kod 10 dakika geçerlidir. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.</p>
@@ -103,7 +103,7 @@ export const requestSignupOtp = action({
           body: JSON.stringify({
             from: RESEND_FROM_ADDRESS,
             to: [email],
-            subject: "skinLoop doğrulama kodun",
+            subject: "BeautyLoop doğrulama kodun",
             html: buildOtpEmailHtml(code),
           }),
         });
@@ -112,11 +112,11 @@ export const requestSignupOtp = action({
         } else {
           const errorText = await response.text();
           // eslint-disable-next-line no-console -- gönderim hatasını teşhis edebilmek için kasıtlı
-          console.error(`[skinLoop OTP] Resend gönderimi başarısız (${response.status}): ${errorText}`);
+          console.error(`[BeautyLoop OTP] Resend gönderimi başarısız (${response.status}): ${errorText}`);
         }
       } catch (err) {
         // eslint-disable-next-line no-console -- gönderim hatasını teşhis edebilmek için kasıtlı
-        console.error("[skinLoop OTP] Resend isteği başarısız:", err);
+        console.error("[BeautyLoop OTP] Resend isteği başarısız:", err);
       }
     }
 
@@ -125,7 +125,7 @@ export const requestSignupOtp = action({
     // bu satır kaldırılmalı — kodun loglara düşmesi istenmez.
     // eslint-disable-next-line no-console -- geliştirme ortamında OTP'yi görebilmek için kasıtlı
     console.log(
-      `[skinLoop OTP] ${email} → ${code} (10 dk geçerli)${emailSent ? " — Resend ile gönderildi ✓" : " — e-posta gönderilemedi, yalnızca burada görünüyor"}`,
+      `[BeautyLoop OTP] ${email} → ${code} (10 dk geçerli)${emailSent ? " — Resend ile gönderildi ✓" : " — e-posta gönderilemedi, yalnızca burada görünüyor"}`,
     );
   },
 });

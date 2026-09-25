@@ -38,14 +38,17 @@ export const THEME_PREVIEW_SWATCHES: Record<ThemeId, [string, string, string]> =
   "deep-dark": ["#12141D", "#5C7CFA", "#8C7BF0"],
 };
 
-/** Kart tasarım dili: yüksek köşe yuvarlaklığı + yumuşak dağınık gölge (Structured ilhamı). */
-export const CARD_RADIUS = 22;
+/** Kart tasarım dili: yüksek köşe yuvarlaklığı + yumuşak dağınık gölge (Structured ilhamı).
+ * Değerler ui-ux-pro-max skill'inin "Soft UI Evolution" stil kılavuzuna göre kalibre
+ * edildi: düz/keskin değil ama neumorphism kadar da ağır olmayan, geniş/dağınık/düşük
+ * opaklıklı "premium float" gölgesi (bkz. design-system/skinloop/MASTER.md). */
+export const CARD_RADIUS = 26;
 export const CARD_SHADOW = {
   shadowColor: "#000",
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.05,
-  shadowRadius: 10,
-  elevation: 2,
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.06,
+  shadowRadius: 16,
+  elevation: 3,
 } as const;
 
 /** `#RRGGBB` rengini `rgba(...)`'ya çevirir — yarı saydam yüzeyler (buzlu cam tab bar, degrade blob'lar) için. */
@@ -61,14 +64,32 @@ export function hexToRgba(hex: string, alpha: number): string {
  * cihazın gerçek alt güvenli alanı (`insets.bottom`) her kullanım yerinde ayrıca eklenir. */
 export const FAB_BOTTOM_OFFSET = 16;
 
-/** Daha belirgin, "kaldırılmış" kartlar için (ör. üst başlık bloğu, öne çıkan istatistik kartları). */
+/** Daha belirgin, "kaldırılmış" kartlar için (ör. üst başlık bloğu, öne çıkan istatistik kartları).
+ * Yüksek offset + geniş/düşük opaklıklı blur = sert değil, yayılmış/premium bir "yüzen kart" hissi. */
 export const ELEVATED_SHADOW = {
   shadowColor: "#000",
-  shadowOffset: { width: 0, height: 10 },
-  shadowOpacity: 0.14,
-  shadowRadius: 20,
+  shadowOffset: { width: 0, height: 14 },
+  shadowOpacity: 0.12,
+  shadowRadius: 28,
   elevation: 8,
 } as const;
+
+/** Tema fark etmeksizin, "başarı/premium" anlarını (tamamlanan adım, ulaşılan
+ * seviye, yıldızlar) işaretlemek için kullanılan sabit rose-gold degrade —
+ * markanın kendi tema rengini boğmadan nadiren, bilinçli bir vurgu olarak. */
+export const PREMIUM_ACCENT: [string, string] = ["#F3D2C1", "#C98A6B"];
+
+/** Düz siyah gölge yerine, verilen rengin kendisinden yayılan yumuşak/geniş bir
+ * "glow" — ışığı ve derinliği vurgulayan premium kart/rozet efektleri için. */
+export function glowShadow(hex: string, opacity = 0.24) {
+  return {
+    shadowColor: hex,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: opacity,
+    shadowRadius: 24,
+    elevation: 6,
+  } as const;
+}
 
 /**
  * Üst başlık bloğu ve öne çıkan vurgu alanları için iki durak (2-stop)
@@ -88,6 +109,7 @@ export const THEME_GRADIENTS: Record<ThemeId, [string, string]> = {
 /** Pudra & Şeftali — varsayılan tema. Kirli beyaz zemin, pudra pembesi/şeftali aksanlar. */
 const softPeachTheme: MD3Theme = {
   ...MD3LightTheme,
+  roundness: 16,
   colors: {
     ...MD3LightTheme.colors,
     primary: "#D9776E",
@@ -133,6 +155,7 @@ const softPeachTheme: MD3Theme = {
 /** Bej & Sıcak Casual — sıcak yulaf/keten zemin, toprak/vizon tonları. */
 const earthyBeigeTheme: MD3Theme = {
   ...MD3LightTheme,
+  roundness: 16,
   colors: {
     ...MD3LightTheme.colors,
     primary: "#A98F72",
@@ -179,6 +202,7 @@ const earthyBeigeTheme: MD3Theme = {
 /** Bebek Mavisi & Pastel Buz — ferah, temiz buz mavisi zemin. */
 const cloudBlueTheme: MD3Theme = {
   ...MD3LightTheme,
+  roundness: 16,
   colors: {
     ...MD3LightTheme.colors,
     primary: "#5C7CFA",
@@ -225,6 +249,7 @@ const cloudBlueTheme: MD3Theme = {
 /** Adaçayı & Nane Yeşili — mentol/adaçayı zemin, botanik his. */
 const sageFreshTheme: MD3Theme = {
   ...MD3LightTheme,
+  roundness: 16,
   colors: {
     ...MD3LightTheme.colors,
     primary: "#4F8B63",
@@ -271,6 +296,7 @@ const sageFreshTheme: MD3Theme = {
 /** Bordo & Kırmızı Vurgulu — krem zemin üzerinde iddialı bordo/mercan aksanlar. */
 const crimsonVelvetTheme: MD3Theme = {
   ...MD3LightTheme,
+  roundness: 16,
   colors: {
     ...MD3LightTheme.colors,
     primary: "#9E2A2B",
@@ -317,6 +343,7 @@ const crimsonVelvetTheme: MD3Theme = {
 /** Derin Koyu Mod — mat gece mavisi/grafit zemin, neon indigo aksanlar. */
 const deepDarkTheme: MD3Theme = {
   ...MD3DarkTheme,
+  roundness: 16,
   colors: {
     ...MD3DarkTheme.colors,
     primary: "#5C7CFA",

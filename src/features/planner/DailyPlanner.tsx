@@ -9,11 +9,12 @@ import { Chip, IconButton, Switch, Text, useTheme } from "react-native-paper";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { CircularProgress } from "@/components/CircularProgress";
+import { GlassCard } from "@/components/GlassCard";
 import { DayStrip } from "@/features/planner/DayStrip";
 import { MonthCalendarDialog } from "@/features/planner/MonthCalendarDialog";
 import { getWeekDates, toDayKey } from "@/lib/dateKeys";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS, hexToRgba } from "@/theme/theme";
+import { PREMIUM_ACCENT, THEME_GRADIENTS, glowShadow, hexToRgba } from "@/theme/theme";
 import { useAppTheme } from "@/theme/ThemeContext";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
 
@@ -57,16 +58,8 @@ function LoopSection({
   const doneCount = steps.filter((step) => completedStepIds.has(step._id)).length;
 
   return (
-    <View
-      style={{
-        borderRadius: CARD_RADIUS,
-        backgroundColor: theme.colors.surface,
-        padding: 18,
-        gap: 12,
-        ...ELEVATED_SHADOW,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+    <GlassCard padding={20} style={{ gap: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
         <LinearGradient
           colors={THEME_GRADIENTS[themeId]}
           start={{ x: 0, y: 0 }}
@@ -98,30 +91,46 @@ function LoopSection({
               key={step._id}
               disabled={step.missingProduct}
               onPress={() => onToggleStep(step._id)}
-              style={{
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 10,
-                paddingVertical: 8,
+                paddingVertical: 10,
                 paddingHorizontal: 10,
                 borderRadius: 14,
-                backgroundColor: completed ? hexToRgba(THEME_GRADIENTS[themeId][0], 0.12) : "transparent",
-              }}
+                minHeight: 44,
+                opacity: pressed ? 0.6 : 1,
+                backgroundColor: completed ? hexToRgba(PREMIUM_ACCENT[0], 0.14) : "transparent",
+              })}
             >
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: completed ? THEME_GRADIENTS[themeId][1] : "transparent",
-                  borderWidth: completed ? 0 : 1.5,
-                  borderColor: theme.colors.outlineVariant,
-                }}
-              >
-                {completed ? <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" /> : null}
-              </View>
+              {completed ? (
+                <LinearGradient
+                  colors={PREMIUM_ACCENT}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    ...glowShadow(PREMIUM_ACCENT[1], 0.5),
+                  }}
+                >
+                  <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" />
+                </LinearGradient>
+              ) : (
+                <View
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    borderWidth: 1.5,
+                    borderColor: theme.colors.outlineVariant,
+                  }}
+                />
+              )}
               <Text
                 style={{
                   flex: 1,
@@ -141,13 +150,67 @@ function LoopSection({
           );
         })}
       </View>
-    </View>
+    </GlassCard>
+  );
+}
+
+function StatBox({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  value: string;
+  label: string;
+}) {
+  const theme = useTheme();
+  const { themeId } = useAppTheme();
+  return (
+    <GlassCard padding={18} style={{ flex: 1, gap: 2 }}>
+      <LinearGradient
+        colors={THEME_GRADIENTS[themeId]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 9,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 12,
+        }}
+      >
+        <MaterialCommunityIcons name={icon} size={14} color="#FFFFFF" />
+      </LinearGradient>
+      <Text
+        style={{
+          fontFamily: FONT_DISPLAY_BOLD,
+          fontSize: 28,
+          letterSpacing: -0.4,
+          lineHeight: 31,
+          color: theme.colors.onSurface,
+        }}
+      >
+        {value}
+      </Text>
+      <Text
+        style={{
+          fontSize: 10.5,
+          fontWeight: "600",
+          letterSpacing: 0.3,
+          color: theme.colors.onSurfaceVariant,
+          marginTop: 3,
+        }}
+        numberOfLines={2}
+      >
+        {label}
+      </Text>
+    </GlassCard>
   );
 }
 
 export function DailyPlanner() {
   const theme = useTheme();
-  const { themeId } = useAppTheme();
   const bottomClearance = useBottomClearance();
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [lazyMode, setLazyMode] = useState(false);
@@ -202,9 +265,12 @@ export function DailyPlanner() {
   const eveningLoops = loops.filter((loop) => loop.type === "evening");
   const otherLoops = loops.filter((loop) => loop.type === "weekly" || loop.type === "monthly");
 
+  const todaysTotalSteps = loops.reduce((sum, loop) => sum + loop.steps.length, 0);
+  const todaysCompletedSteps = completedStepIdsForSelectedDay.size;
+
   return (
-    <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: bottomClearance + 24 }}>
-      <View style={{ paddingTop: 16, flexDirection: "row", alignItems: "center" }}>
+    <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: bottomClearance + 32 }}>
+      <View style={{ paddingTop: 20, flexDirection: "row", alignItems: "center" }}>
         <View style={{ flex: 1 }}>
           <DayStrip weekDates={weekDates} selectedDate={selectedDate} onSelect={setSelectedDate} />
         </View>
@@ -222,7 +288,17 @@ export function DailyPlanner() {
         onSelectDate={setSelectedDate}
       />
 
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16 }}>
+      <View style={{ flexDirection: "row", gap: 14, paddingHorizontal: 20 }}>
+        <StatBox
+          icon="check-circle-outline"
+          value={`${todaysCompletedSteps}/${todaysTotalSteps}`}
+          label="Bugünkü İlerleme"
+        />
+        <StatBox icon="calendar-check-outline" value={String(loops.length)} label="Aktif Rutin" />
+        <StatBox icon="bottle-tonic-outline" value={String(products?.length ?? 0)} label="Ürün Sayısı" />
+      </View>
+
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <MaterialCommunityIcons name="lightning-bolt-outline" size={20} color={theme.colors.primary} />
           <Text variant="labelLarge">Tembel Mod</Text>
@@ -238,7 +314,7 @@ export function DailyPlanner() {
           </Text>
         </View>
       ) : (
-        <View style={{ paddingHorizontal: 16, gap: 12 }}>
+        <View style={{ paddingHorizontal: 20, gap: 16 }}>
           {morningLoops.map((loop) => (
             <LoopSection
               key={loop._id}
@@ -273,36 +349,29 @@ export function DailyPlanner() {
       )}
 
       {weeklyScore !== null ? (
-        <View
-          style={{
-            marginHorizontal: 16,
-            borderRadius: CARD_RADIUS,
-            backgroundColor: theme.colors.surface,
-            padding: 20,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 20,
-            ...ELEVATED_SHADOW,
-          }}
+        <GlassCard
+          padding={22}
+          accentColor={PREMIUM_ACCENT[1]}
+          style={{ marginHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 22 }}
         >
           <CircularProgress
             progress={weeklyScore / 100}
-            color={THEME_GRADIENTS[themeId]}
+            color={PREMIUM_ACCENT}
             trackColor={theme.colors.surfaceVariant}
           >
-            <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color: theme.colors.onSurface }}>
+            <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 23, color: theme.colors.onSurface }}>
               %{weeklyScore}
             </Text>
           </CircularProgress>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 18, color: theme.colors.onSurface }}>
+          <View style={{ flex: 1, gap: 5 }}>
+            <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 20, color: theme.colors.onSurface }}>
               Haftalık Uyum Skoru
             </Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Bu hafta tamamladığın adımların rutinlerine oranı.
             </Text>
           </View>
-        </View>
+        </GlassCard>
       ) : null}
     </ScrollView>
   );

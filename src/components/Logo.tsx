@@ -39,7 +39,7 @@ export function Logo({ size = 48, primaryColor, secondaryColor }: LogoProps) {
       viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
       fill="none"
       accessibilityRole="image"
-      accessibilityLabel="skinLoop"
+      accessibilityLabel="BeautyLoop"
     >
       <Defs>
         <LinearGradient id={ringId} x1={20} y1={16} x2={100} y2={104} gradientUnits="userSpaceOnUse">

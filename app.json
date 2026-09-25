@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "skinLoop",
+    "name": "BeautyLoop",
     "slug": "skinLoop",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -38,7 +38,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "skinLoop, ürün barkodunu taramak için kameraya erişim istiyor."
+          "cameraPermission": "BeautyLoop, ürün barkodunu taramak için kameraya erişim istiyor."
         }
       ],
       [
@@ -51,14 +51,14 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "skinLoop, Cilt Günlüğü fotoğraflarını cihaz galerine de kaydetmek için erişim istiyor.",
-          "savePhotosPermission": "skinLoop, Cilt Günlüğü fotoğraflarını cihaz galerine kaydetmek istiyor."
+          "photosPermission": "BeautyLoop, Cilt Günlüğü fotoğraflarını cihaz galerine de kaydetmek için erişim istiyor.",
+          "savePhotosPermission": "BeautyLoop, Cilt Günlüğü fotoğraflarını cihaz galerine kaydetmek istiyor."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "skinLoop, profil fotoğrafı seçmek için galerine erişim istiyor."
+          "photosPermission": "BeautyLoop, profil fotoğrafı seçmek için galerine erişim istiyor."
         }
       ],
       "expo-sharing"

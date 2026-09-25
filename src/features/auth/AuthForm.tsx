@@ -321,7 +321,7 @@ export function AuthForm() {
             color: theme.colors.onBackground,
           }}
         >
-          skinLoop
+          BeautyLoop
         </Text>
         <Text
           variant="bodyMedium"

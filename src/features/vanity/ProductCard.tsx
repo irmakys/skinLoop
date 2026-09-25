@@ -7,7 +7,7 @@ import { IconButton, Text, useTheme } from "react-native-paper";
 import { CATEGORY_ICONS, CATEGORY_LABELS_TR, type Category } from "@/constants/categories";
 import { useAppTheme } from "@/theme/ThemeContext";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS } from "@/theme/theme";
+import { CARD_RADIUS, THEME_GRADIENTS, glowShadow, hexToRgba } from "@/theme/theme";
 
 type ProductCardProps = {
   name: string;
@@ -61,8 +61,13 @@ export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit,
       onPress={onPress}
       style={[
         styles.card,
-        ELEVATED_SHADOW,
-        { backgroundColor: theme.colors.surface, borderRadius: CARD_RADIUS },
+        glowShadow(THEME_GRADIENTS[themeId][0], 0.16),
+        {
+          backgroundColor: hexToRgba(theme.colors.surface, 0.86),
+          borderRadius: CARD_RADIUS,
+          borderWidth: 1,
+          borderColor: hexToRgba(THEME_GRADIENTS[themeId][0], 0.22),
+        },
       ]}
     >
       <LinearGradient
@@ -125,8 +130,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    padding: 14,
+    gap: 16,
+    padding: 16,
   },
   iconBadge: {
     width: 48,

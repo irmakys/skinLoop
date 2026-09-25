@@ -70,7 +70,7 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
             Devam Etmeden Önce
           </Text>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 21 }}>
-            skinLoop&apos;u kullanmaya devam edebilmen için{" "}
+            BeautyLoop&apos;u kullanmaya devam edebilmen için{" "}
             <Text
               style={{ color: theme.colors.primary, fontWeight: "700" }}
               onPress={() => setLegalModalType("terms")}

@@ -7,7 +7,8 @@ import { Button, Card, Checkbox, Chip, Dialog, IconButton, Portal, Text, useThem
 import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { EditJournalEntryDialog } from "@/features/journal/EditJournalEntryDialog";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
-import { CARD_RADIUS, ELEVATED_SHADOW } from "@/theme/theme";
+import { useAppTheme } from "@/theme/ThemeContext";
+import { CARD_RADIUS, THEME_GRADIENTS, glowShadow, hexToRgba } from "@/theme/theme";
 import {
   deleteJournalEntries,
   listJournalEntries,
@@ -34,6 +35,7 @@ function formatDate(epochMs: number): string {
  */
 export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) {
   const theme = useTheme();
+  const { themeId } = useAppTheme();
   const router = useRouter();
   const userId = useCurrentUserId();
   const bottomClearance = useBottomClearance();
@@ -173,18 +175,22 @@ export function JournalGallery({ loopId, loopNames = {} }: JournalGalleryProps) 
           data={items}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          contentContainerStyle={{ padding: 12, paddingBottom: bottomClearance, gap: 12 }}
-          columnWrapperStyle={{ gap: 12 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: bottomClearance, gap: 16 }}
+          columnWrapperStyle={{ gap: 16 }}
           renderItem={({ item }) => (
             <Card
               mode="elevated"
-              style={{
-                flex: 1,
-                borderRadius: CARD_RADIUS,
-                overflow: "hidden",
-                backgroundColor: theme.colors.surface,
-                ...ELEVATED_SHADOW,
-              }}
+              style={[
+                {
+                  flex: 1,
+                  borderRadius: CARD_RADIUS,
+                  overflow: "hidden",
+                  backgroundColor: theme.colors.surface,
+                  borderWidth: 1,
+                  borderColor: hexToRgba(THEME_GRADIENTS[themeId][0], 0.2),
+                },
+                glowShadow(THEME_GRADIENTS[themeId][0], 0.16),
+              ]}
               onPress={isSelecting ? () => toggleSelect(item.id) : undefined}
             >
               <View>

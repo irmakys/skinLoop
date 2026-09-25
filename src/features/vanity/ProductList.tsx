@@ -52,7 +52,7 @@ export function ProductList() {
       <FlatList
         data={products}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 16, paddingBottom: bottomClearance, gap: 12 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: bottomClearance, gap: 14 }}
         renderItem={({ item }) => (
           <ProductCard
             name={item.name}
