@@ -1,11 +1,14 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { Button, Dialog, HelperText, Portal } from "react-native-paper";
+import { Alert } from "react-native";
+import { Button, HelperText } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { AppDialog } from "@/components/AppDialog";
 import { isReminderStateValid, ReminderTimeEditor, type ReminderState } from "@/features/loops/ReminderTimeEditor";
-import { cancelReminder, scheduleLoopReminder } from "@/lib/notifications";
+import { useLocale } from "@/i18n/LocaleContext";
+import { cancelReminder, ensureNotificationPermission, scheduleLoopReminder } from "@/lib/notifications";
 
 type LoopType = "morning" | "evening" | "weekly" | "monthly";
 
@@ -24,6 +27,7 @@ type EditLoopReminderDialogProps = {
 
 /** Var olan bir rutinin hatırlatıcı saatini/gününü sonradan değiştirmek için diyalog. */
 export function EditLoopReminderDialog({ loop, initialState, onDismiss }: EditLoopReminderDialogProps) {
+  const { t } = useLocale();
   const updateLoopReminder = useMutation(api.loops.updateLoopReminder);
 
   const [reminder, setReminder] = useState<ReminderState>(initialState);
@@ -43,7 +47,7 @@ export function EditLoopReminderDialog({ loop, initialState, onDismiss }: EditLo
     }
     setError(null);
     if (!isReminderStateValid(loop.type, reminder)) {
-      setError("Hatırlatıcı saati geçerli değil.");
+      setError(t("loops.invalidReminderTime"));
       return;
     }
 
@@ -55,12 +59,22 @@ export function EditLoopReminderDialog({ loop, initialState, onDismiss }: EditLo
 
       let notificationId: string | null = null;
       if (reminder.enabled) {
-        notificationId = await scheduleLoopReminder(loop._id, loop.name, loop.type, {
-          hour: Number(reminder.hour),
-          minute: Number(reminder.minute),
-          weekday: reminder.weekday,
-          day: Number(reminder.day),
-        });
+        // Zamanlamadan önce izin doğrulanmazsa, işletim sistemi izin hiç
+        // istenmediği için bildirimi sessizce hiç göstermez (asıl hata buydu).
+        const permissionGranted = await ensureNotificationPermission();
+        if (!permissionGranted) {
+          Alert.alert(
+            t("loops.notificationPermissionDeniedTitle"),
+            t("loops.notificationPermissionDeniedBody"),
+          );
+        } else {
+          notificationId = await scheduleLoopReminder(loop._id, loop.name, loop.type, {
+            hour: Number(reminder.hour),
+            minute: Number(reminder.minute),
+            weekday: reminder.weekday,
+            day: Number(reminder.day),
+          });
+        }
       }
 
       await updateLoopReminder({
@@ -74,27 +88,28 @@ export function EditLoopReminderDialog({ loop, initialState, onDismiss }: EditLo
       });
       onDismiss();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hatırlatıcı güncellenemedi.");
+      setError(err instanceof Error ? err.message : t("loops.reminderUpdateFailed"));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <Portal>
-      <Dialog visible={loop !== null} onDismiss={onDismiss}>
-        <Dialog.Title>Hatırlatıcıyı Düzenle</Dialog.Title>
-        <Dialog.Content style={{ gap: 12 }}>
-          {loop ? <ReminderTimeEditor type={loop.type} value={reminder} onChange={setReminder} /> : null}
-          {error ? <HelperText type="error">{error}</HelperText> : null}
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={onDismiss}>Vazgeç</Button>
+    <AppDialog
+      visible={loop !== null}
+      onDismiss={onDismiss}
+      title={t("loops.editReminderTitle")}
+      actions={
+        <>
+          <Button onPress={onDismiss}>{t("common.cancel")}</Button>
           <Button onPress={handleSave} loading={isSubmitting}>
-            Kaydet
+            {t("common.save")}
           </Button>
-        </Dialog.Actions>
-      </Dialog>
-    </Portal>
+        </>
+      }
+    >
+      {loop ? <ReminderTimeEditor type={loop.type} value={reminder} onChange={setReminder} /> : null}
+      {error ? <HelperText type="error">{error}</HelperText> : null}
+    </AppDialog>
   );
 }

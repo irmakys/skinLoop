@@ -16,7 +16,7 @@ export default function LoopsScreen() {
   const bottomClearance = useBottomClearance();
 
   if (isCreating) {
-    return <CreateLoopForm onSaved={() => setIsCreating(false)} />;
+    return <CreateLoopForm onSaved={() => setIsCreating(false)} onCancel={() => setIsCreating(false)} />;
   }
 
   return (

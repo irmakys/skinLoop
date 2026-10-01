@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
-import { ScrollView, View } from "react-native";
-import { Button, Checkbox, HelperText, SegmentedButtons, Text, TextInput } from "react-native-paper";
+import { useEffect, useState } from "react";
+import { Alert, BackHandler, ScrollView, View } from "react-native";
+import { Button, Checkbox, HelperText, IconButton, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { isReminderStateValid, ReminderTimeEditor, type ReminderState } from "@/features/loops/ReminderTimeEditor";
-import { DEFAULT_LOOP_TIMES, scheduleLoopReminder } from "@/lib/notifications";
+import { useLocale } from "@/i18n/LocaleContext";
+import { DEFAULT_LOOP_TIMES, ensureNotificationPermission, scheduleLoopReminder } from "@/lib/notifications";
 import { getNotificationPreferences } from "@/lib/preferences";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 import { CARD_RADIUS } from "@/theme/theme";
@@ -20,9 +21,13 @@ function defaultReminderState(type: LoopType): ReminderState {
 
 type CreateLoopFormProps = {
   onSaved: () => void;
+  /** Kullanıcı rutin oluşturmaktan vazgeçip listeye geri dönmek istediğinde çağrılır (geri butonu + Android donanım geri tuşu). */
+  onCancel: () => void;
 };
 
-export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
+export function CreateLoopForm({ onSaved, onCancel }: CreateLoopFormProps) {
+  const { t } = useLocale();
+  const theme = useTheme();
   const products = useQuery(api.products.listProducts);
   const createLoop = useMutation(api.loops.createLoop);
   const updateLoopReminder = useMutation(api.loops.updateLoopReminder);
@@ -34,6 +39,19 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
   const [reminder, setReminder] = useState<ReminderState>(() => defaultReminderState("morning"));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Bu ekran ayrı bir route/modal değil, aynı sekmenin içeriğini yerinde
+  // değiştiren bir local state (bkz. loops/index.tsx) — bu yüzden Expo
+  // Router'ın kendi geri yığını bu ekrandan habersiz. Android donanım/gesture
+  // geri tuşu varsayılan davranışta hiçbir şey yapmaz (veya sekmeyi
+  // tamamen kapatabilir); burada elle yakalayıp listeye dönüşe yönlendiriyoruz.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      onCancel();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [onCancel]);
 
   function handleTypeChange(nextType: LoopType) {
     setType(nextType);
@@ -64,15 +82,15 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
     setError(null);
 
     if (!name.trim()) {
-      setError("Rutin adı zorunludur.");
+      setError(t("loops.nameRequired"));
       return;
     }
     if (selectedProductIds.length === 0) {
-      setError("En az bir ürün seçmelisin.");
+      setError(t("loops.selectAtLeastOneProduct"));
       return;
     }
     if (!isReminderStateValid(type, reminder)) {
-      setError("Hatırlatıcı saati geçerli değil.");
+      setError(t("loops.invalidReminderTime"));
       return;
     }
 
@@ -99,25 +117,38 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
 
       const preferences = await getNotificationPreferences();
       if (reminder.enabled && preferences.loopRemindersEnabled) {
-        const notificationId = await scheduleLoopReminder(loopId, name.trim(), type, {
-          hour: reminderHour,
-          minute: reminderMinute,
-          weekday: reminder.weekday,
-          day: reminderDay,
-        });
-        await updateLoopReminder({
-          loopId,
-          reminderEnabled: true,
-          reminderHour,
-          reminderMinute,
-          reminderWeekday: type === "weekly" ? reminder.weekday : undefined,
-          reminderDay: type === "monthly" ? reminderDay : undefined,
-          reminderNotificationId: notificationId ?? undefined,
-        });
+        // Bildirim gerçekten ekrana düşsün diye, zamanlamadan ÖNCE izin
+        // isteniyor/doğrulanıyor. Bu adım atlanırsa (önceki hata): işletim
+        // sistemi izin hiç istenmediği için zamanlanan bildirimi sessizce
+        // hiç göstermez — kullanıcı "saat geldi ama bildirim gelmedi" hatasını
+        // tam olarak bu yüzden yaşıyordu.
+        const permissionGranted = await ensureNotificationPermission();
+        if (!permissionGranted) {
+          Alert.alert(
+            t("loops.notificationPermissionDeniedTitle"),
+            t("loops.notificationPermissionDeniedBody"),
+          );
+        } else {
+          const notificationId = await scheduleLoopReminder(loopId, name.trim(), type, {
+            hour: reminderHour,
+            minute: reminderMinute,
+            weekday: reminder.weekday,
+            day: reminderDay,
+          });
+          await updateLoopReminder({
+            loopId,
+            reminderEnabled: true,
+            reminderHour,
+            reminderMinute,
+            reminderWeekday: type === "weekly" ? reminder.weekday : undefined,
+            reminderDay: type === "monthly" ? reminderDay : undefined,
+            reminderNotificationId: notificationId ?? undefined,
+          });
+        }
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Rutin kaydedilemedi.");
+      setError(err instanceof Error ? err.message : t("loops.saveFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -125,24 +156,34 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
-      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, marginBottom: 4 }}>Rutin Oluştur</Text>
-      <TextInput mode="outlined" label="Rutin Adı" value={name} onChangeText={setName} />
+      <View style={{ flexDirection: "row", alignItems: "center", marginLeft: -8, marginBottom: -4 }}>
+        <IconButton
+          icon="arrow-left"
+          size={22}
+          iconColor={theme.colors.onSurface}
+          onPress={onCancel}
+          accessibilityLabel={t("common.cancel")}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        />
+        <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24 }}>{t("loops.createTitle")}</Text>
+      </View>
+      <TextInput mode="outlined" label={t("loops.nameLabel")} value={name} onChangeText={setName} />
 
-      <Text variant="labelLarge">Sıklık</Text>
+      <Text variant="labelLarge">{t("loops.frequency")}</Text>
       <SegmentedButtons
         value={type}
         onValueChange={(value) => handleTypeChange(value as LoopType)}
         buttons={[
-          { value: "morning", label: "Sabah" },
-          { value: "evening", label: "Akşam" },
-          { value: "weekly", label: "Haftalık" },
-          { value: "monthly", label: "Aylık" },
+          { value: "morning", label: t("loops.typeMorning") },
+          { value: "evening", label: t("loops.typeEvening") },
+          { value: "weekly", label: t("loops.typeWeekly") },
+          { value: "monthly", label: t("loops.typeMonthly") },
         ]}
       />
 
       <ReminderTimeEditor type={type} value={reminder} onChange={setReminder} />
 
-      <Text variant="titleMedium">Adımlar (ürünler)</Text>
+      <Text variant="titleMedium">{t("loops.stepsLabel")}</Text>
       {(products ?? []).map((product) => {
         const isSelected = selectedProductIds.includes(product._id);
         return (
@@ -154,7 +195,7 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
             />
             {isSelected ? (
               <Checkbox.Item
-                label="Opsiyonel adım (Tembel Mod'da atlanır)"
+                label={t("loops.optionalStep")}
                 labelStyle={{ fontSize: 13 }}
                 style={{ paddingLeft: 24 }}
                 status={optionalProductIds.has(product._id) ? "checked" : "unchecked"}
@@ -164,9 +205,7 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
           </View>
         );
       })}
-      {products?.length === 0 ? (
-        <Text>Önce Ürünlerim&apos;e bir ürün eklemelisin.</Text>
-      ) : null}
+      {products?.length === 0 ? <Text>{t("loops.addProductsFirst")}</Text> : null}
 
       {error ? <HelperText type="error">{error}</HelperText> : null}
 
@@ -177,7 +216,7 @@ export function CreateLoopForm({ onSaved }: CreateLoopFormProps) {
         style={{ borderRadius: CARD_RADIUS, marginTop: 8 }}
         contentStyle={{ paddingVertical: 4 }}
       >
-        Kaydet
+        {t("common.save")}
       </Button>
     </ScrollView>
   );

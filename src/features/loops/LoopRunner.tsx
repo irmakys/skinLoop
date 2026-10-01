@@ -13,17 +13,18 @@ import type { Doc, Id } from "@convex/_generated/dataModel";
 import { AddLoopStepDialog } from "@/features/loops/AddLoopStepDialog";
 import { EditLoopReminderDialog, type EditableLoopReminder } from "@/features/loops/EditLoopReminderDialog";
 import type { ReminderState } from "@/features/loops/ReminderTimeEditor";
+import { useLocale, type TranslationKey } from "@/i18n/LocaleContext";
 import { cancelReminder } from "@/lib/notifications";
-import { WEEKDAY_LABELS_TR } from "@/lib/dateKeys";
+import { WEEKDAY_KEYS } from "@/lib/dateKeys";
 import { useAppTheme } from "@/theme/ThemeContext";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 import { THEME_GRADIENTS, hexToRgba } from "@/theme/theme";
 
-const LOOP_TYPE_LABELS_TR: Record<string, string> = {
-  morning: "Sabah",
-  evening: "Akşam",
-  weekly: "Haftalık",
-  monthly: "Aylık",
+const LOOP_TYPE_LABEL_KEYS: Record<string, TranslationKey> = {
+  morning: "loops.typeMorning",
+  evening: "loops.typeEvening",
+  weekly: "loops.typeWeekly",
+  monthly: "loops.typeMonthly",
 };
 
 const LOOP_TYPE_ICONS: Record<string, React.ComponentProps<typeof MaterialCommunityIcons>["name"]> = {
@@ -37,25 +38,28 @@ function pad2(value: number): string {
   return String(value).padStart(2, "0");
 }
 
-function reminderSummary(loop: {
-  reminderEnabled?: boolean;
-  reminderHour?: number;
-  reminderMinute?: number;
-  reminderWeekday?: number;
-  reminderDay?: number;
-  type: string;
-}): string {
+function reminderSummary(
+  loop: {
+    reminderEnabled?: boolean;
+    reminderHour?: number;
+    reminderMinute?: number;
+    reminderWeekday?: number;
+    reminderDay?: number;
+    type: string;
+  },
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string,
+): string {
   if (!loop.reminderEnabled || loop.reminderHour === undefined || loop.reminderMinute === undefined) {
-    return "Hatırlatıcı kapalı";
+    return t("loops.reminderOff");
   }
   const time = `${pad2(loop.reminderHour)}:${pad2(loop.reminderMinute)}`;
   if (loop.type === "weekly" && loop.reminderWeekday !== undefined) {
-    return `${WEEKDAY_LABELS_TR[loop.reminderWeekday]} ${time}`;
+    return t("loops.weeklyAt", { weekday: t(WEEKDAY_KEYS[loop.reminderWeekday]), time });
   }
   if (loop.type === "monthly" && loop.reminderDay !== undefined) {
-    return `Ayın ${loop.reminderDay}. günü ${time}`;
+    return t("loops.monthlyOn", { day: loop.reminderDay, time });
   }
-  return `Her gün ${time}`;
+  return t("loops.everyDayAt", { time });
 }
 
 /**
@@ -66,6 +70,7 @@ function reminderSummary(loop: {
 export function LoopRunner() {
   const theme = useTheme();
   const { themeId } = useAppTheme();
+  const { t } = useLocale();
   const router = useRouter();
   const loops = useQuery(api.loops.listLoops);
   const products = useQuery(api.products.listProducts);
@@ -84,7 +89,7 @@ export function LoopRunner() {
     return (
       <View style={{ flex: 1, padding: 32, alignItems: "center", justifyContent: "center", gap: 8 }}>
         <MaterialCommunityIcons name="calendar-check-outline" size={40} color={theme.colors.outline} />
-        <Text style={{ color: theme.colors.onSurfaceVariant }}>Henüz bir rutin oluşturulmadı.</Text>
+        <Text style={{ color: theme.colors.onSurfaceVariant }}>{t("loops.emptyState")}</Text>
       </View>
     );
   }
@@ -148,7 +153,7 @@ export function LoopRunner() {
                   style={{ alignSelf: "flex-start", backgroundColor: theme.colors.secondaryContainer }}
                   textStyle={{ fontSize: 11 }}
                 >
-                  {LOOP_TYPE_LABELS_TR[loop.type]}
+                  {t(LOOP_TYPE_LABEL_KEYS[loop.type])}
                 </Chip>
               </View>
               <IconButton
@@ -164,10 +169,10 @@ export function LoopRunner() {
                 color={theme.colors.onSurfaceVariant}
               />
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                {reminderSummary(loop)}
+                {reminderSummary(loop, t)}
               </Text>
               <Button compact mode="text" onPress={() => openReminderEditor(loop)}>
-                Düzenle
+                {t("common.edit")}
               </Button>
             </View>
 
@@ -180,7 +185,7 @@ export function LoopRunner() {
                   router.push({ pathname: "/(tabs)/journal/capture", params: { loopId: loop._id } })
                 }
               >
-                Fotoğraf Çek
+                {t("common.takePhoto")}
               </Button>
               <Button
                 icon="image-multiple-outline"
@@ -188,7 +193,7 @@ export function LoopRunner() {
                 compact
                 onPress={() => router.push({ pathname: "/(tabs)/journal", params: { loopId: loop._id } })}
               >
-                Cilt Günlüğü
+                {t("loops.skinDiary")}
               </Button>
             </View>
           </Card.Content>
@@ -202,11 +207,11 @@ export function LoopRunner() {
                 <View key={step._id} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 4 }}>
                   <Text style={{ color: theme.colors.onSurfaceVariant, width: 20 }}>{index + 1}.</Text>
                   <Text style={{ flex: 1 }} numberOfLines={1}>
-                    {step.missingProduct ? "Ürün eksik — yeniden seçilmeli" : (product?.name ?? "Ürün yükleniyor...")}
+                    {step.missingProduct ? t("loops.productMissing") : (product?.name ?? t("loops.productLoading"))}
                   </Text>
                   {step.isOptional ? (
                     <Chip compact style={{ backgroundColor: theme.colors.surfaceVariant }} textStyle={{ fontSize: 10 }}>
-                      Opsiyonel
+                      {t("loops.optionalBadge")}
                     </Chip>
                   ) : null}
                   <IconButton
@@ -227,7 +232,7 @@ export function LoopRunner() {
               onPress={() => setAddStepLoopId(loop._id)}
               style={{ alignSelf: "flex-start" }}
             >
-              Ürün Ekle
+              {t("loops.addProduct")}
             </Button>
           </Card.Content>
         </GlassCard>

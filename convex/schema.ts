@@ -60,24 +60,35 @@ export default defineSchema({
    */
   emailVerificationRequests: defineTable({
     email: v.string(),
+    /** SHA-256 hex hash'i — düz metin kod hiçbir zaman burada saklanmaz (bkz. convex/emailVerification.ts hashOtp). */
     otp: v.string(),
     otpExpiresAt: v.number(),
     verified: v.boolean(),
+    /** Son kod gönderim zamanı (ms) — "Kodu Tekrar Gönder" için sunucu taraflı 60sn cooldown'ı burada uygulanır. */
+    lastSentAt: v.optional(v.number()),
+    /** Bu kod için yapılan yanlış deneme sayısı — brute-force'u engellemek için MAX_OTP_ATTEMPTS'te kilitlenir. */
+    attempts: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
   /**
    * Paylaşılan barkod→ürün kataloğu (kullanıcıya özel değil — bir barkod
    * fiziksel ürünün kendisini tanımlar, kim taradığından bağımsızdır).
    * Barkod tarama akışında Open Beauty Facts'e gitmeden önce ilk bakılan
-   * yerel kaynak; Gratis CSV seed'i ve API'den önbelleğe alınan sonuçlar
-   * burada birikir. `products` tablosuyla karıştırılmamalı: o, kullanıcının
-   * kendi envanterindeki (açılmış/PAO takipli) ürünleri tutar.
+   * yerel kaynak; Gratis/Rossmann/Watsons CSV seed'leri ve API'den
+   * önbelleğe alınan sonuçlar burada birikir. `products` tablosuyla
+   * karıştırılmamalı: o, kullanıcının kendi envanterindeki (açılmış/PAO
+   * takipli) ürünleri tutar.
    */
   productCatalog: defineTable({
     name: v.string(),
     barcode: v.string(),
     brand: v.optional(v.string()),
-    source: v.union(v.literal("local_gratis"), v.literal("open_beauty_facts")),
+    source: v.union(
+      v.literal("local_gratis"),
+      v.literal("local_rossmann"),
+      v.literal("local_watsons"),
+      v.literal("open_beauty_facts"),
+    ),
     createdAt: v.number(),
   }).index("by_barcode", ["barcode"]),
 

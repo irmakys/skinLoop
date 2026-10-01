@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AppLocaleProvider } from "@/i18n/LocaleContext";
 import { convex, secureStorage } from "@/lib/convexClient";
 import { AppThemeProvider, useAppTheme } from "@/theme/ThemeContext";
 
@@ -55,9 +56,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ConvexAuthProvider client={convex} storage={secureStorage}>
-        <AppThemeProvider>
-          <ThemedApp />
-        </AppThemeProvider>
+        <AppLocaleProvider>
+          <AppThemeProvider>
+            <ThemedApp />
+          </AppThemeProvider>
+        </AppLocaleProvider>
       </ConvexAuthProvider>
     </SafeAreaProvider>
   );

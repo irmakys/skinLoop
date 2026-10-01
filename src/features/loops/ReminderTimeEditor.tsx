@@ -1,7 +1,8 @@
 import { View } from "react-native";
 import { Chip, HelperText, Switch, Text, TextInput, useTheme } from "react-native-paper";
 
-import { WEEKDAY_LABELS_TR } from "@/lib/dateKeys";
+import { useLocale } from "@/i18n/LocaleContext";
+import { WEEKDAY_KEYS } from "@/lib/dateKeys";
 
 type LoopType = "morning" | "evening" | "weekly" | "monthly";
 
@@ -27,6 +28,7 @@ type ReminderTimeEditorProps = {
  */
 export function ReminderTimeEditor({ type, value, onChange }: ReminderTimeEditorProps) {
   const theme = useTheme();
+  const { t } = useLocale();
 
   const hourValue = Number(value.hour);
   const minuteValue = Number(value.minute);
@@ -38,7 +40,7 @@ export function ReminderTimeEditor({ type, value, onChange }: ReminderTimeEditor
   return (
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text variant="labelLarge">Hatırlatıcı</Text>
+        <Text variant="labelLarge">{t("reminder.title")}</Text>
         <Switch value={value.enabled} onValueChange={(enabled) => onChange({ ...value, enabled })} />
       </View>
 
@@ -46,14 +48,14 @@ export function ReminderTimeEditor({ type, value, onChange }: ReminderTimeEditor
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TextInput
-              label="Saat (0-23)"
+              label={t("reminder.hourLabel")}
               value={value.hour}
               onChangeText={(hour) => onChange({ ...value, hour })}
               keyboardType="numeric"
               style={{ flex: 1 }}
             />
             <TextInput
-              label="Dakika (0-59)"
+              label={t("reminder.minuteLabel")}
               value={value.minute}
               onChangeText={(minute) => onChange({ ...value, minute })}
               keyboardType="numeric"
@@ -61,23 +63,23 @@ export function ReminderTimeEditor({ type, value, onChange }: ReminderTimeEditor
             />
           </View>
           {hourInvalid || minuteInvalid ? (
-            <HelperText type="error">Saat 0-23, dakika 0-59 aralığında olmalı.</HelperText>
+            <HelperText type="error">{t("reminder.timeRangeError")}</HelperText>
           ) : null}
 
           {type === "weekly" ? (
             <View style={{ gap: 4 }}>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                Hangi gün?
+                {t("reminder.whichDay")}
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                {WEEKDAY_LABELS_TR.map((label, index) => (
+                {WEEKDAY_KEYS.map((key, index) => (
                   <Chip
-                    key={label}
+                    key={key}
                     compact
                     selected={value.weekday === index}
                     onPress={() => onChange({ ...value, weekday: index })}
                   >
-                    {label}
+                    {t(key)}
                   </Chip>
                 ))}
               </View>
@@ -87,12 +89,12 @@ export function ReminderTimeEditor({ type, value, onChange }: ReminderTimeEditor
           {type === "monthly" ? (
             <View>
               <TextInput
-                label="Ayın günü (1-31)"
+                label={t("reminder.dayOfMonthLabel")}
                 value={value.day}
                 onChangeText={(day) => onChange({ ...value, day })}
                 keyboardType="numeric"
               />
-              {dayInvalid ? <HelperText type="error">Ayın günü 1-31 aralığında olmalı.</HelperText> : null}
+              {dayInvalid ? <HelperText type="error">{t("reminder.dayOfMonthError")}</HelperText> : null}
             </View>
           ) : null}
         </View>

@@ -1,11 +1,13 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { Button, Dialog, HelperText, Portal, TextInput } from "react-native-paper";
+import { Button, HelperText, TextInput } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { CATEGORY_LABELS_TR, type Category } from "@/constants/categories";
+import { AppDialog } from "@/components/AppDialog";
+import { CATEGORY_LABEL_KEYS, type Category } from "@/constants/categories";
 import { CategoryPickerDialog } from "@/features/vanity/CategoryPickerDialog";
+import { useLocale } from "@/i18n/LocaleContext";
 
 export type EditableProduct = {
   _id: Id<"products">;
@@ -21,6 +23,7 @@ type EditProductDialogProps = {
 };
 
 export function EditProductDialog({ product, onDismiss }: EditProductDialogProps) {
+  const { t } = useLocale();
   const updateProduct = useMutation(api.products.updateProduct);
 
   const [name, setName] = useState("");
@@ -49,11 +52,11 @@ export function EditProductDialog({ product, onDismiss }: EditProductDialogProps
 
     const paoMonthsValue = Number(paoMonths);
     if (!name.trim()) {
-      setError("Ürün adı zorunludur.");
+      setError(t("vanity.nameRequired"));
       return;
     }
     if (!Number.isFinite(paoMonthsValue) || paoMonthsValue <= 0) {
-      setError("PAO süresi (ay) geçerli bir sayı olmalı.");
+      setError(t("vanity.paoInvalid"));
       return;
     }
 
@@ -68,37 +71,40 @@ export function EditProductDialog({ product, onDismiss }: EditProductDialogProps
       });
       onDismiss();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ürün güncellenemedi.");
+      setError(err instanceof Error ? err.message : t("vanity.updateSaveFailed"));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <Portal>
-      <Dialog visible={product !== null} onDismiss={onDismiss}>
-        <Dialog.Title>Ürünü Düzenle</Dialog.Title>
-        <Dialog.Content style={{ gap: 12 }}>
-          <TextInput label="Ürün Adı" value={name} onChangeText={setName} />
-          <TextInput label="Marka" value={brand} onChangeText={setBrand} />
-          <Button mode="outlined" icon="chevron-down" onPress={() => setCategoryDialogVisible(true)}>
-            {CATEGORY_LABELS_TR[category]}
-          </Button>
-          <TextInput
-            label="PAO (ay)"
-            value={paoMonths}
-            onChangeText={setPaoMonths}
-            keyboardType="numeric"
-          />
-          {error ? <HelperText type="error">{error}</HelperText> : null}
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={onDismiss}>Vazgeç</Button>
-          <Button onPress={handleSubmit} loading={isSubmitting}>
-            Kaydet
-          </Button>
-        </Dialog.Actions>
-      </Dialog>
+    <>
+      <AppDialog
+        visible={product !== null}
+        onDismiss={onDismiss}
+        title={t("vanity.editProductTitle")}
+        actions={
+          <>
+            <Button onPress={onDismiss}>{t("common.cancel")}</Button>
+            <Button onPress={handleSubmit} loading={isSubmitting}>
+              {t("common.save")}
+            </Button>
+          </>
+        }
+      >
+        <TextInput label={t("vanity.nameLabel")} value={name} onChangeText={setName} />
+        <TextInput label={t("vanity.brandLabel")} value={brand} onChangeText={setBrand} />
+        <Button mode="outlined" icon="chevron-down" onPress={() => setCategoryDialogVisible(true)}>
+          {t(CATEGORY_LABEL_KEYS[category])}
+        </Button>
+        <TextInput
+          label={t("vanity.paoLabel")}
+          value={paoMonths}
+          onChangeText={setPaoMonths}
+          keyboardType="numeric"
+        />
+        {error ? <HelperText type="error">{error}</HelperText> : null}
+      </AppDialog>
 
       <CategoryPickerDialog
         visible={categoryDialogVisible}
@@ -106,6 +112,6 @@ export function EditProductDialog({ product, onDismiss }: EditProductDialogProps
         onDismiss={() => setCategoryDialogVisible(false)}
         onSelect={setCategory}
       />
-    </Portal>
+    </>
   );
 }

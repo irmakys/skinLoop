@@ -1,48 +1,63 @@
 import { MD3LightTheme, MD3DarkTheme, type MD3Theme } from "react-native-paper";
 
-export type ThemeId =
-  | "soft-peach"
-  | "earthy-beige"
-  | "cloud-blue"
-  | "sage-fresh"
-  | "crimson-velvet"
-  | "deep-dark";
+import type { TranslationKey } from "@/i18n/LocaleContext";
 
-export const DEFAULT_THEME_ID: ThemeId = "soft-peach";
+export type ThemeId = "leopard" | "nude-rose-gold" | "emerald-champagne" | "titanium-graphite";
 
-export const THEME_LABELS_TR: Record<ThemeId, string> = {
-  "soft-peach": "Pudra & Şeftali",
-  "earthy-beige": "Bej & Sıcak Casual",
-  "cloud-blue": "Bebek Mavisi & Pastel Buz",
-  "sage-fresh": "Adaçayı & Nane Yeşili",
-  "crimson-velvet": "Bordo & Kırmızı Vurgulu",
-  "deep-dark": "Derin Koyu Mod",
+export const DEFAULT_THEME_ID: ThemeId = "nude-rose-gold";
+
+/** Sadece "Leopar Glam" temasında zemin/kart katmanlarına hafif desen basılır. */
+export function isPatternedTheme(themeId: ThemeId): boolean {
+  return themeId === "leopard";
+}
+
+/** Tema adları artık i18n anahtarı — UI'da `t(THEME_LABEL_KEYS[themeId])` ile çevrilir. */
+export const THEME_LABEL_KEYS: Record<ThemeId, TranslationKey> = {
+  leopard: "themes.leopardLabel",
+  "nude-rose-gold": "themes.nudeRoseGoldLabel",
+  "emerald-champagne": "themes.emeraldChampagneLabel",
+  "titanium-graphite": "themes.titaniumGraphiteLabel",
 };
 
-export const THEME_DESCRIPTIONS_TR: Record<ThemeId, string> = {
-  "soft-peach": "Kirli beyaz zemin, pudra pembesi ve şeftali aksanlar.",
-  "earthy-beige": "Sıcak yulaf/keten zemin, toprak ve vizon tonları.",
-  "cloud-blue": "Açık buz mavisi zemin, gök mavisi ve pastel indigo aksanlar.",
-  "sage-fresh": "Mentol/adaçayı zemin, taze nane ve okaliptüs tonları.",
-  "crimson-velvet": "Krem zemin üzerinde derin bordo ve canlı mercan kırmızısı.",
-  "deep-dark": "Gece mavisi/mat grafit zemin, neon indigo aksanlar.",
+export const THEME_DESCRIPTION_KEYS: Record<ThemeId, TranslationKey> = {
+  leopard: "themes.leopardDescription",
+  "nude-rose-gold": "themes.nudeRoseGoldDescription",
+  "emerald-champagne": "themes.emeraldChampagneDescription",
+  "titanium-graphite": "themes.titaniumGraphiteDescription",
 };
 
 /** Ayarlar'daki yatay tema seçici daireleri için: [zemin, primary, ikincil vurgu]. */
 export const THEME_PREVIEW_SWATCHES: Record<ThemeId, [string, string, string]> = {
-  "soft-peach": ["#FDFBF9", "#E89A8A", "#D9776E"],
-  "earthy-beige": ["#F7F4EE", "#A98F72", "#7C6349"],
-  "cloud-blue": ["#F2F6FB", "#7EA0D6", "#5C7CFA"],
-  "sage-fresh": ["#F1F6F3", "#7CA982", "#4F8B63"],
-  "crimson-velvet": ["#F7F3EE", "#9E2A2B", "#E63946"],
-  "deep-dark": ["#12141D", "#5C7CFA", "#8C7BF0"],
+  leopard: ["#1A1013", "#D69AA0", "#9C6066"],
+  "nude-rose-gold": ["#FAF5F2", "#DF8B77", "#F3D0C2"],
+  "emerald-champagne": ["#184A45", "#CEAA84", "#F7E5CF"],
+  "titanium-graphite": ["#4B5360", "#C8D3DF", "#8A99A8"],
 };
+
+/** "Leopar Glam" kartlarında/zeminde kullanılan ince tozlu gül ışıltı kenarlığı. */
+export const LEOPARD_BORDER = "rgba(214, 154, 160, 0.4)";
+
+/** Gerçekçi leopar rozetinin kendi rengi — UI vurgu rengi (gül/rose) ne olursa
+ * olsun SABİT kalır; desen her zaman doğal bakır/kahve + neredeyse-siyah kenar
+ * olarak görünür, UI'ın pembe/gül aksanına asla boyanmaz. */
+export const LEOPARD_PATTERN_FILL = "#7A4F30";
+export const LEOPARD_PATTERN_BORDER = "#0D0805";
 
 /** Kart tasarım dili: yüksek köşe yuvarlaklığı + yumuşak dağınık gölge (Structured ilhamı).
  * Değerler ui-ux-pro-max skill'inin "Soft UI Evolution" stil kılavuzuna göre kalibre
  * edildi: düz/keskin değil ama neumorphism kadar da ağır olmayan, geniş/dağınık/düşük
  * opaklıklı "premium float" gölgesi (bkz. design-system/skinloop/MASTER.md). */
 export const CARD_RADIUS = 26;
+
+/**
+ * Modal/Dialog/Alert köşe yuvarlaklığı. React Native Paper MD3'te Dialog'un
+ * kendi varsayılanı `roundness * 7` (bu projede 16 * 7 = 112px!) — bir
+ * kutuyu neredeyse elips/blob'a dönüştüren, aşırı yuvarlak bir değer. Tüm
+ * Dialog'larda (bkz. AppDialog.tsx) bunun yerine bu daha ölçülü, modern
+ * değer kullanılır.
+ */
+export const DIALOG_RADIUS = 20;
+
 export const CARD_SHADOW = {
   shadowColor: "#000",
   shadowOffset: { width: 0, height: 6 },
@@ -98,300 +113,216 @@ export function glowShadow(hex: string, opacity = 0.24) {
  * doygun/koyu bir ikinci durakla eşleşir.
  */
 export const THEME_GRADIENTS: Record<ThemeId, [string, string]> = {
-  "soft-peach": ["#E6A08F", "#C9635A"],
-  "earthy-beige": ["#B79A79", "#8F7455"],
-  "cloud-blue": ["#7EA0D6", "#4863E0"],
-  "sage-fresh": ["#7CA982", "#3D7350"],
-  "crimson-velvet": ["#C33E44", "#7E2022"],
-  "deep-dark": ["#6E5CE0", "#8C7BF0"],
+  leopard: ["#E3AEB3", "#B97880"],
+  "nude-rose-gold": ["#DF8B77", "#9C5443"],
+  "emerald-champagne": ["#CEAA84", "#8A6F4E"],
+  "titanium-graphite": ["#C8D3DF", "#5C6B7A"],
 };
 
-/** Pudra & Şeftali — varsayılan tema. Kirli beyaz zemin, pudra pembesi/şeftali aksanlar. */
-const softPeachTheme: MD3Theme = {
+/**
+ * Nude & Rose Gold — varsayılan tema. Sıcak pudra terracotta ve şeftali
+ * tonlarında, ferah/organik bir cilt bakımı hissiyatı. Marka logosunun
+ * yeni renk paletiyle eşleşen ilk yeni tema.
+ */
+const nudeRoseGoldTheme: MD3Theme = {
   ...MD3LightTheme,
   roundness: 16,
   colors: {
     ...MD3LightTheme.colors,
-    primary: "#D9776E",
+    primary: "#DF8B77",
     onPrimary: "#FFFFFF",
-    primaryContainer: "#F6DFDA",
-    onPrimaryContainer: "#4A231E",
+    primaryContainer: "#F6DCD3",
+    onPrimaryContainer: "#3E2723",
 
-    secondary: "#E89A8A",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#FAE6E0",
-    onSecondaryContainer: "#4A2A23",
+    secondary: "#F3D0C2",
+    onSecondary: "#3E2723",
+    secondaryContainer: "#FDF1EB",
+    onSecondaryContainer: "#3E2723",
 
-    tertiary: "#C9A876",
+    tertiary: "#9C5443",
     onTertiary: "#FFFFFF",
-    tertiaryContainer: "#F3E9D8",
-    onTertiaryContainer: "#4A3B1F",
+    tertiaryContainer: "#E8D3CB",
+    onTertiaryContainer: "#3E2723",
 
-    background: "#FDFBF9",
-    onBackground: "#3A3532",
+    background: "#FAF5F2",
+    onBackground: "#3E2723",
 
     surface: "#FFFFFF",
-    onSurface: "#3A3532",
-    surfaceVariant: "#F5EDEA",
-    onSurfaceVariant: "#6B615D",
-    surfaceDisabled: "rgba(58, 53, 50, 0.12)",
+    onSurface: "#3E2723",
+    surfaceVariant: "#FDF1EB",
+    onSurfaceVariant: "#9C5443",
+    surfaceDisabled: "rgba(62, 39, 35, 0.12)",
 
     error: "#B3261E",
     onError: "#FFFFFF",
     errorContainer: "#F9DEDC",
     onErrorContainer: "#410E0B",
 
-    outline: "#DDCFCA",
-    outlineVariant: "#EBE1DD",
+    outline: "#E8D3CB",
+    outlineVariant: "#F3E4DE",
 
-    inverseSurface: "#332F2A",
-    inverseOnSurface: "#F7F1E7",
+    inverseSurface: "#3E2723",
+    inverseOnSurface: "#FAF5F2",
     inversePrimary: "#F6C4BB",
 
-    backdrop: "rgba(58, 53, 50, 0.4)",
+    backdrop: "rgba(62, 39, 35, 0.4)",
   },
 };
 
-/** Bej & Sıcak Casual — sıcak yulaf/keten zemin, toprak/vizon tonları. */
-const earthyBeigeTheme: MD3Theme = {
-  ...MD3LightTheme,
-  roundness: 16,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: "#A98F72",
-    onPrimary: "#FFFFFF",
-    primaryContainer: "#EAE0D2",
-    onPrimaryContainer: "#3B2E1D",
-
-    secondary: "#7C6349",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#E3D6C4",
-    onSecondaryContainer: "#332813",
-
-    tertiary: "#8A9A7E",
-    onTertiary: "#FFFFFF",
-    tertiaryContainer: "#E1E8D9",
-    onTertiaryContainer: "#2C3524",
-
-    background: "#F7F4EE",
-    onBackground: "#3A342C",
-
-    surface: "#FCFAF6",
-    onSurface: "#3A342C",
-    surfaceVariant: "#ECE4D5",
-    onSurfaceVariant: "#6B6459",
-
-    surfaceDisabled: "rgba(58, 52, 44, 0.12)",
-
-    error: "#B3261E",
-    onError: "#FFFFFF",
-    errorContainer: "#F9DEDC",
-    onErrorContainer: "#410E0B",
-
-    outline: "#D6C9B5",
-    outlineVariant: "#E6DCC9",
-
-    inverseSurface: "#332E26",
-    inverseOnSurface: "#F7F1E7",
-    inversePrimary: "#D5C4AC",
-
-    backdrop: "rgba(58, 52, 44, 0.4)",
-  },
-};
-
-/** Bebek Mavisi & Pastel Buz — ferah, temiz buz mavisi zemin. */
-const cloudBlueTheme: MD3Theme = {
-  ...MD3LightTheme,
-  roundness: 16,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: "#5C7CFA",
-    onPrimary: "#FFFFFF",
-    primaryContainer: "#DDE6FB",
-    onPrimaryContainer: "#1B2A5C",
-
-    secondary: "#7EA0D6",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#E0EAF7",
-    onSecondaryContainer: "#1F3350",
-
-    tertiary: "#8C7BF0",
-    onTertiary: "#FFFFFF",
-    tertiaryContainer: "#E3DEFF",
-    onTertiaryContainer: "#241A42",
-
-    background: "#F2F6FB",
-    onBackground: "#232A38",
-
-    surface: "#FFFFFF",
-    onSurface: "#232A38",
-    surfaceVariant: "#E7EEF7",
-    onSurfaceVariant: "#5A6779",
-
-    surfaceDisabled: "rgba(35, 42, 56, 0.12)",
-
-    error: "#B3261E",
-    onError: "#FFFFFF",
-    errorContainer: "#F9DEDC",
-    onErrorContainer: "#410E0B",
-
-    outline: "#C7D4E6",
-    outlineVariant: "#DDE6F2",
-
-    inverseSurface: "#232A38",
-    inverseOnSurface: "#EAF2FA",
-    inversePrimary: "#B4C4F7",
-
-    backdrop: "rgba(35, 42, 56, 0.4)",
-  },
-};
-
-/** Adaçayı & Nane Yeşili — mentol/adaçayı zemin, botanik his. */
-const sageFreshTheme: MD3Theme = {
-  ...MD3LightTheme,
-  roundness: 16,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: "#4F8B63",
-    onPrimary: "#FFFFFF",
-    primaryContainer: "#DBEBDE",
-    onPrimaryContainer: "#173323",
-
-    secondary: "#7CA982",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#E1EDE2",
-    onSecondaryContainer: "#22331F",
-
-    tertiary: "#6FA8A0",
-    onTertiary: "#FFFFFF",
-    tertiaryContainer: "#DCEEEB",
-    onTertiaryContainer: "#1B3532",
-
-    background: "#F1F6F3",
-    onBackground: "#28312B",
-
-    surface: "#FBFDFB",
-    onSurface: "#28312B",
-    surfaceVariant: "#E4EEE5",
-    onSurfaceVariant: "#5A695D",
-
-    surfaceDisabled: "rgba(40, 49, 43, 0.12)",
-
-    error: "#B3261E",
-    onError: "#FFFFFF",
-    errorContainer: "#F9DEDC",
-    onErrorContainer: "#410E0B",
-
-    outline: "#C4D6C7",
-    outlineVariant: "#DDE9DE",
-
-    inverseSurface: "#28312B",
-    inverseOnSurface: "#EAF5EC",
-    inversePrimary: "#A6D3AE",
-
-    backdrop: "rgba(40, 49, 43, 0.4)",
-  },
-};
-
-/** Bordo & Kırmızı Vurgulu — krem zemin üzerinde iddialı bordo/mercan aksanlar. */
-const crimsonVelvetTheme: MD3Theme = {
-  ...MD3LightTheme,
-  roundness: 16,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: "#9E2A2B",
-    onPrimary: "#FFFFFF",
-    primaryContainer: "#F4D9D9",
-    onPrimaryContainer: "#3A0F10",
-
-    secondary: "#E63946",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#FBDBDD",
-    onSecondaryContainer: "#410408",
-
-    tertiary: "#B08968",
-    onTertiary: "#FFFFFF",
-    tertiaryContainer: "#F0E0D0",
-    onTertiaryContainer: "#4A2F1C",
-
-    background: "#F7F3EE",
-    onBackground: "#332524",
-
-    surface: "#FFFFFF",
-    onSurface: "#332524",
-    surfaceVariant: "#EFE1DE",
-    onSurfaceVariant: "#6E5C5A",
-
-    surfaceDisabled: "rgba(51, 37, 36, 0.12)",
-
-    error: "#9E2A2B",
-    onError: "#FFFFFF",
-    errorContainer: "#F4D9D9",
-    onErrorContainer: "#3A0F10",
-
-    outline: "#DDC7C4",
-    outlineVariant: "#EDDEDC",
-
-    inverseSurface: "#332524",
-    inverseOnSurface: "#FBEEEC",
-    inversePrimary: "#E8A6A6",
-
-    backdrop: "rgba(51, 37, 36, 0.4)",
-  },
-};
-
-/** Derin Koyu Mod — mat gece mavisi/grafit zemin, neon indigo aksanlar. */
-const deepDarkTheme: MD3Theme = {
+/**
+ * Zümrüt & Şampanya Gold — lüks dermokozmetik/spa hissiyatı veren koyu mod.
+ * Derin zümrüt yeşili zemin üzerinde şampanya altın vurgular; metin rengi
+ * yüksek kontrast için kırık beyaz/altın tonlarında.
+ */
+const emeraldChampagneTheme: MD3Theme = {
   ...MD3DarkTheme,
   roundness: 16,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: "#5C7CFA",
-    onPrimary: "#FFFFFF",
-    primaryContainer: "#2B3466",
-    onPrimaryContainer: "#DCE2FF",
+    primary: "#CEAA84",
+    onPrimary: "#0C2B28",
+    primaryContainer: "#3D3423",
+    onPrimaryContainer: "#F7E5CF",
 
-    secondary: "#8C7BF0",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#362F5C",
-    onSecondaryContainer: "#E3DEFF",
+    secondary: "#9FB8A8",
+    onSecondary: "#0C2B28",
+    secondaryContainer: "#26433D",
+    onSecondaryContainer: "#DCEDE5",
 
-    tertiary: "#7EA0D6",
-    onTertiary: "#0F1A2E",
-    tertiaryContainer: "#243352",
-    onTertiaryContainer: "#D9E2F7",
+    tertiary: "#F7E5CF",
+    onTertiary: "#0C2B28",
+    tertiaryContainer: "#3D3423",
+    onTertiaryContainer: "#F7E5CF",
 
-    background: "#12141D",
-    onBackground: "#E8E9F0",
+    background: "#184A45",
+    onBackground: "#FFFFFF",
 
-    surface: "#1C202C",
-    onSurface: "#E8E9F0",
-    surfaceVariant: "#292E3D",
-    onSurfaceVariant: "#B4B8C8",
-
-    surfaceDisabled: "rgba(232, 233, 240, 0.12)",
+    surface: "#215852",
+    onSurface: "#FFFFFF",
+    surfaceVariant: "#0C2B28",
+    onSurfaceVariant: "#CEAA84",
+    surfaceDisabled: "rgba(255, 255, 255, 0.12)",
 
     error: "#F2B8B5",
     onError: "#601410",
     errorContainer: "#8C1D18",
     onErrorContainer: "#F9DEDC",
 
-    outline: "#474C5E",
-    outlineVariant: "#343949",
+    /** "Derinlik/kontrast gölgesi" — verilen koyu yeşil ton doğrudan kenarlık/gölge rengi olarak kullanılır. */
+    outline: "#0C2B28",
+    outlineVariant: "#12352F",
 
-    inverseSurface: "#E8E9F0",
-    inverseOnSurface: "#1C202C",
-    inversePrimary: "#3A4FA0",
+    inverseSurface: "#F7E5CF",
+    inverseOnSurface: "#184A45",
+    inversePrimary: "#8A6F4E",
 
-    backdrop: "rgba(0, 0, 0, 0.6)",
+    backdrop: "rgba(12, 43, 40, 0.75)",
+  },
+};
+
+/**
+ * Titanyum & Grafit — minimalist, medikal, modern ve unisex bir his. Füme
+ * arduvaz grisi zemin üzerinde soğuk metalik gümüş vurgular; yüksek
+ * okunabilirlik için açık gri-beyaz metin.
+ */
+const titaniumGraphiteTheme: MD3Theme = {
+  ...MD3DarkTheme,
+  roundness: 16,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: "#C8D3DF",
+    onPrimary: "#1E232B",
+    primaryContainer: "#2A303A",
+    onPrimaryContainer: "#C8D3DF",
+
+    secondary: "#8A99A8",
+    onSecondary: "#1E232B",
+    secondaryContainer: "#2A303A",
+    onSecondaryContainer: "#C8D3DF",
+
+    tertiary: "#AAB8C5",
+    onTertiary: "#1E232B",
+    tertiaryContainer: "#2A303A",
+    onTertiaryContainer: "#F0F4F8",
+
+    background: "#4B5360",
+    onBackground: "#F0F4F8",
+
+    surface: "#373E49",
+    onSurface: "#F0F4F8",
+    surfaceVariant: "#2A303A",
+    onSurfaceVariant: "#C8D3DF",
+    surfaceDisabled: "rgba(240, 244, 248, 0.12)",
+
+    error: "#F2B8B5",
+    onError: "#601410",
+    errorContainer: "#8C1D18",
+    onErrorContainer: "#F9DEDC",
+
+    /** "Siyah-gri kontrast kenarlık/gölge" isteği doğrudan outline'a taşındı. */
+    outline: "#1E232B",
+    outlineVariant: "#262B33",
+
+    inverseSurface: "#F0F4F8",
+    inverseOnSurface: "#2A303A",
+    inversePrimary: "#5C6B7A",
+
+    backdrop: "rgba(30, 35, 43, 0.75)",
+  },
+};
+
+/** Leopar Glam — couture/glam: sıcak vizon/bej zemin, altın amber aksanlar,
+ * espresso koyu metin. Zemin ve kartlara `LeopardPattern` ile hafif bir
+ * leopar dokusu bindirilir (bkz. AmbientBackground, GlassCard). */
+const leopardTheme: MD3Theme = {
+  ...MD3DarkTheme,
+  roundness: 16,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: "#D69AA0",
+    onPrimary: "#FFFFFF",
+    primaryContainer: "#4A2B30",
+    onPrimaryContainer: "#EFC7CB",
+
+    secondary: "#C98089",
+    onSecondary: "#FFFFFF",
+    secondaryContainer: "#3D242A",
+    onSecondaryContainer: "#EFC7CB",
+
+    tertiary: "#9C6066",
+    onTertiary: "#FFFFFF",
+    tertiaryContainer: "#3D242A",
+    onTertiaryContainer: "#EFC7CB",
+
+    background: "#1A1013",
+    onBackground: "#F5EAEA",
+
+    surface: "#26161A",
+    onSurface: "#F5EAEA",
+    surfaceVariant: "#331E22",
+    onSurfaceVariant: "#C9A8AC",
+
+    surfaceDisabled: "rgba(245, 234, 234, 0.12)",
+
+    error: "#F2B8B5",
+    onError: "#601410",
+    errorContainer: "#8C1D18",
+    onErrorContainer: "#F9DEDC",
+
+    outline: "#5C3A40",
+    outlineVariant: "#4A2B30",
+
+    inverseSurface: "#F5EAEA",
+    inverseOnSurface: "#26161A",
+    inversePrimary: "#9C6066",
+
+    backdrop: "rgba(10, 6, 7, 0.65)",
   },
 };
 
 export const THEMES: Record<ThemeId, MD3Theme> = {
-  "soft-peach": softPeachTheme,
-  "earthy-beige": earthyBeigeTheme,
-  "cloud-blue": cloudBlueTheme,
-  "sage-fresh": sageFreshTheme,
-  "crimson-velvet": crimsonVelvetTheme,
-  "deep-dark": deepDarkTheme,
+  leopard: leopardTheme,
+  "nude-rose-gold": nudeRoseGoldTheme,
+  "emerald-champagne": emeraldChampagneTheme,
+  "titanium-graphite": titaniumGraphiteTheme,
 };

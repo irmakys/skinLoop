@@ -6,6 +6,7 @@ import { Button, Text, useTheme } from "react-native-paper";
 
 import { useSession } from "@/features/auth/useSession";
 import { LegalModal, type LegalDocumentType } from "@/features/auth/LegalModal";
+import { useLocale } from "@/i18n/LocaleContext";
 import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
 
 /**
@@ -23,6 +24,7 @@ import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
  */
 export function LegalConsentGate({ children }: { children: ReactNode }) {
   const theme = useTheme();
+  const { t } = useLocale();
   const { signOut } = useSession();
   const user = useQuery(api.users.getCurrentUser);
   const acceptKvkkConsent = useMutation(api.users.acceptKvkkConsent);
@@ -67,24 +69,24 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
           }}
         >
           <Text variant="headlineSmall" style={{ fontWeight: "700", color: theme.colors.onSurface }}>
-            Devam Etmeden Önce
+            {t("legal.gateTitle")}
           </Text>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 21 }}>
-            BeautyLoop&apos;u kullanmaya devam edebilmen için{" "}
+            {t("legal.gateBodyBefore")}
             <Text
               style={{ color: theme.colors.primary, fontWeight: "700" }}
               onPress={() => setLegalModalType("terms")}
             >
-              Kullanıcı Sözleşmesi
+              {t("legal.termsLink")}
             </Text>
-            &apos;ni ve{" "}
+            {t("legal.gateBodyBetween")}
             <Text
               style={{ color: theme.colors.primary, fontWeight: "700" }}
               onPress={() => setLegalModalType("kvkk")}
             >
-              KVKK Aydınlatma Metni
+              {t("legal.kvkkLink")}
             </Text>
-            &apos;ni okuyup kişisel verilerinin işlenmesini onaylaman gerekiyor.
+            {t("legal.gateBodyAfter")}
           </Text>
 
           <Button
@@ -94,10 +96,10 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
             style={{ borderRadius: CARD_RADIUS, marginTop: 8 }}
             contentStyle={{ height: 48 }}
           >
-            Okudum, Onaylıyorum ve Devam Et
+            {t("legal.gateAccept")}
           </Button>
           <Button mode="text" onPress={handleDecline} loading={isSigningOut} textColor={theme.colors.error}>
-            Reddet ve Çıkış Yap
+            {t("legal.gateReject")}
           </Button>
         </View>
       </ScrollView>

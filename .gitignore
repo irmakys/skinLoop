@@ -40,6 +40,11 @@ yarn-error.*
 # agent-local credentials (never commit)
 .claude/settings.local.json
 
+# temporary generated secrets (ör. prod JWT keypair) — asla commit edilmemeli
+.prod_jwt_private_key.tmp
+.prod_jwks.tmp
+*.tmp
+
 # typescript
 *.tsbuildinfo
 

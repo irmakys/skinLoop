@@ -13,6 +13,7 @@ import type * as emailVerification from "../emailVerification.js";
 import type * as gratisSeedData from "../gratisSeedData.js";
 import type * as http from "../http.js";
 import type * as legalConsent from "../legalConsent.js";
+import type * as localCatalogSeedData from "../localCatalogSeedData.js";
 import type * as loops from "../loops.js";
 import type * as products from "../products.js";
 import type * as seed from "../seed.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   gratisSeedData: typeof gratisSeedData;
   http: typeof http;
   legalConsent: typeof legalConsent;
+  localCatalogSeedData: typeof localCatalogSeedData;
   loops: typeof loops;
   products: typeof products;
   seed: typeof seed;

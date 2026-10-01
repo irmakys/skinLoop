@@ -8,8 +8,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps } from "react";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { ActivityIndicator, Button, Dialog, HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
+import { ActivityIndicator, Button, HelperText, Text, TextInput, useTheme } from "react-native-paper";
 
+import { AppDialog } from "@/components/AppDialog";
+import { useLocale } from "@/i18n/LocaleContext";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 import { CARD_RADIUS, ELEVATED_SHADOW, THEME_GRADIENTS } from "@/theme/theme";
 import { useAppTheme } from "@/theme/ThemeContext";
@@ -52,6 +54,7 @@ function StatItem({
 
 export function ProfileHeader() {
   const theme = useTheme();
+  const { t } = useLocale();
   const { themeId } = useAppTheme();
   const user = useQuery(api.users.getCurrentUser);
   const stats = useQuery(api.users.getProfileStats);
@@ -75,7 +78,7 @@ export function ProfileHeader() {
 
   async function handleSaveName() {
     if (!nameDraft.trim()) {
-      setNameError("Kullanıcı adı boş olamaz.");
+      setNameError(t("profile.nameRequired"));
       return;
     }
     setIsSavingName(true);
@@ -83,7 +86,7 @@ export function ProfileHeader() {
       await updateProfileName({ name: nameDraft.trim() });
       setIsNameDialogVisible(false);
     } catch (err) {
-      setNameError(err instanceof Error ? err.message : "Kaydedilemedi.");
+      setNameError(err instanceof Error ? err.message : t("common.saveFailed"));
     } finally {
       setIsSavingName(false);
     }
@@ -93,7 +96,7 @@ export function ProfileHeader() {
     setAvatarError(null);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setAvatarError("Galeriye erişim izni verilmedi.");
+      setAvatarError(t("profile.galleryPermissionDenied"));
       return;
     }
 
@@ -120,7 +123,7 @@ export function ProfileHeader() {
       const { storageId } = (await uploadResponse.json()) as { storageId: Id<"_storage"> };
       await updateProfileImage({ storageId });
     } catch (err) {
-      setAvatarError(err instanceof Error ? err.message : "Fotoğraf yüklenemedi.");
+      setAvatarError(err instanceof Error ? err.message : t("profile.avatarUploadFailed"));
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -201,7 +204,7 @@ export function ProfileHeader() {
         style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
       >
         <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 22, color: theme.colors.onSurface }}>
-          {user?.name?.trim() || "İsimsiz Kullanıcı"}
+          {user?.name?.trim() || t("profile.unnamedUser")}
         </Text>
         <MaterialCommunityIcons name="pencil-outline" size={16} color={theme.colors.onSurfaceVariant} />
       </Pressable>
@@ -219,32 +222,34 @@ export function ProfileHeader() {
           borderTopColor: theme.colors.outlineVariant,
         }}
       >
-        <StatItem icon="bottle-tonic-outline" value={stats?.totalProducts ?? 0} label="Ürün" />
-        <StatItem icon="calendar-check-outline" value={stats?.totalLoops ?? 0} label="Rutin" />
-        <StatItem icon="check-circle-outline" value={stats?.totalCompletions ?? 0} label="Tamamlanan" />
+        <StatItem icon="bottle-tonic-outline" value={stats?.totalProducts ?? 0} label={t("profile.statProducts")} />
+        <StatItem icon="calendar-check-outline" value={stats?.totalLoops ?? 0} label={t("profile.statLoops")} />
+        <StatItem icon="check-circle-outline" value={stats?.totalCompletions ?? 0} label={t("profile.statCompletions")} />
       </View>
 
-      <Portal>
-        <Dialog visible={isNameDialogVisible} onDismiss={() => setIsNameDialogVisible(false)}>
-          <Dialog.Title>Kullanıcı Adını Düzenle</Dialog.Title>
-          <Dialog.Content style={{ gap: 8 }}>
-            <TextInput
-              mode="outlined"
-              label="Kullanıcı Adı"
-              value={nameDraft}
-              onChangeText={setNameDraft}
-              autoFocus
-            />
-            {nameError ? <HelperText type="error">{nameError}</HelperText> : null}
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setIsNameDialogVisible(false)}>Vazgeç</Button>
+      <AppDialog
+        visible={isNameDialogVisible}
+        onDismiss={() => setIsNameDialogVisible(false)}
+        title={t("profile.editNameTitle")}
+        contentGap={8}
+        actions={
+          <>
+            <Button onPress={() => setIsNameDialogVisible(false)}>{t("common.cancel")}</Button>
             <Button onPress={handleSaveName} loading={isSavingName}>
-              Kaydet
+              {t("common.save")}
             </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+          </>
+        }
+      >
+        <TextInput
+          mode="outlined"
+          label={t("profile.nameLabel")}
+          value={nameDraft}
+          onChangeText={setNameDraft}
+          autoFocus
+        />
+        {nameError ? <HelperText type="error">{nameError}</HelperText> : null}
+      </AppDialog>
     </View>
   );
 }

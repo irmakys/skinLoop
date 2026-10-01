@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { Button, HelperText, IconButton, Text, TextInput } from "react-native-paper";
 
 import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
+import { useLocale } from "@/i18n/LocaleContext";
 import { addJournalEntry } from "@/lib/journalStorage";
 import { saveToDeviceGallery } from "@/lib/mediaLibrary";
 
@@ -15,6 +16,7 @@ type CapturePhotoProps = {
 };
 
 export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
+  const { t } = useLocale();
   const userId = useCurrentUserId();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -30,9 +32,9 @@ export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
   if (!cameraPermission.granted) {
     return (
       <View style={styles.center}>
-        <Text>Fotoğraf çekmek için kamera izni gerekiyor.</Text>
+        <Text>{t("capture.cameraPermissionNeeded")}</Text>
         <Button mode="contained" onPress={requestCameraPermission}>
-          İzin Ver
+          {t("common.grantPermission")}
         </Button>
       </View>
     );
@@ -49,7 +51,7 @@ export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
     try {
       const picture = await cameraRef.current?.takePictureAsync({ quality: 0.7 });
       if (!picture) {
-        setError("Fotoğraf çekilemedi. Lütfen tekrar dene.");
+        setError(t("capture.captureFailed"));
         return;
       }
 
@@ -70,7 +72,7 @@ export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
       onSaved();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Fotoğraf kaydedilirken bir hata oluştu.",
+        err instanceof Error ? err.message : t("capture.saveFailed"),
       );
     } finally {
       if (capturedFile?.exists) {
@@ -91,14 +93,14 @@ export function CapturePhoto({ loopId, onSaved }: CapturePhotoProps) {
         />
       </CameraView>
       <TextInput
-        label="Not (opsiyonel)"
+        label={t("capture.noteLabel")}
         value={note}
         onChangeText={setNote}
         style={styles.note}
       />
       {error ? <HelperText type="error">{error}</HelperText> : null}
       <Button mode="contained" onPress={handleCapture} loading={isCapturing}>
-        Fotoğraf Çek ve Kaydet
+        {t("capture.captureAndSave")}
       </Button>
     </View>
   );

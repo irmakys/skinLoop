@@ -21,70 +21,41 @@ import { Logo } from "@/components/Logo";
 import { LegalModal, type LegalDocumentType } from "@/features/auth/LegalModal";
 import { OtpDigitsInput } from "@/features/auth/OtpDigitsInput";
 import { useSession } from "@/features/auth/useSession";
+import { useLocale, type TranslationKey } from "@/i18n/LocaleContext";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 import { CARD_RADIUS, CARD_SHADOW } from "@/theme/theme";
 
 type Mode = "sign-in" | "sign-up";
 type SignUpStep = "email" | "otp" | "password";
-type SocialProvider = "google" | "apple";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const RESEND_COOLDOWN_SECONDS = 180;
+/** Sunucudaki gerçek zorunluluk `convex/emailVerification.ts`'teki RESEND_COOLDOWN_MS (60sn) ile eşleşir. */
+const RESEND_COOLDOWN_SECONDS = 60;
 
-function formatCooldown(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
-function toFriendlyOtpError(error: unknown): string {
+function toFriendlyOtpError(error: unknown, t: (key: TranslationKey) => string): string {
   const raw = error instanceof Error ? error.message : String(error);
   if (/EMAIL_ALREADY_REGISTERED/.test(raw)) {
-    return "Bu e-posta zaten kayıtlı. Giriş yapmayı dene.";
+    return t("auth.errors.emailAlreadyRegistered");
   }
   if (/OTP_EXPIRED/.test(raw)) {
-    return "Kodun süresi doldu. Yeni bir kod iste.";
+    return t("auth.errors.otpExpired");
+  }
+  if (/OTP_TOO_MANY_ATTEMPTS/.test(raw)) {
+    return t("auth.errors.otpTooManyAttempts");
   }
   if (/OTP_INVALID/.test(raw)) {
-    return "Girdiğin kod hatalı. Lütfen tekrar dene.";
+    return t("auth.errors.otpInvalid");
   }
   if (/OTP_NOT_REQUESTED/.test(raw)) {
-    return "Önce bir doğrulama kodu istemelisin.";
+    return t("auth.errors.otpNotRequested");
   }
-  return "Bir şeyler ters gitti. Lütfen tekrar dene.";
-}
-
-function SocialSignInButton({
-  provider,
-  loading,
-  onPress,
-}: {
-  provider: SocialProvider;
-  loading: boolean;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  const label = provider === "google" ? "Google ile Giriş Yap" : "Apple ile Giriş Yap";
-
-  return (
-    <Button
-      mode="outlined"
-      onPress={onPress}
-      disabled={loading}
-      style={{ borderRadius: CARD_RADIUS, borderColor: theme.colors.outline }}
-      contentStyle={{ height: 48 }}
-      icon={({ size, color }) =>
-        loading ? (
-          <ActivityIndicator size={size} color={color} />
-        ) : (
-          <MaterialCommunityIcons name={provider} size={size} color={color} />
-        )
-      }
-      textColor={theme.colors.onSurface}
-    >
-      {label}
-    </Button>
-  );
+  if (/OTP_RESEND_COOLDOWN/.test(raw)) {
+    return t("auth.errors.otpResendCooldown");
+  }
+  if (/EMAIL_SEND_FAILED/.test(raw)) {
+    return t("auth.errors.emailSendFailed");
+  }
+  return t("auth.errors.genericRetry");
 }
 
 /**
@@ -92,19 +63,13 @@ function SocialSignInButton({
  * engellemek için 3 adımlı bir sihirbaz: 1) e-posta → OTP iste,
  * 2) 6 haneli kodu doğrula, 3) şifre belirleyip kaydı tamamla. Hesap,
  * e-posta gerçekten doğrulanmadan sunucuda ASLA oluşturulmaz (bkz.
- * convex/auth.ts + convex/emailVerification.ts). Google/Apple OAuth
- * akışlarını da aynı kartta birleştirir (bkz. useSession).
+ * convex/auth.ts + convex/emailVerification.ts).
  */
 export function AuthForm() {
   const theme = useTheme();
+  const { t } = useLocale();
   const router = useRouter();
-  const {
-    signInWithPassword,
-    signUpWithPassword,
-    signInWithGoogle,
-    signInWithApple,
-    signInAsTestUser,
-  } = useSession();
+  const { signInWithPassword, signUpWithPassword } = useSession();
   const requestSignupOtp = useAction(api.emailVerification.requestSignupOtp);
   const verifySignupOtp = useMutation(api.emailVerification.verifySignupOtp);
 
@@ -125,8 +90,6 @@ export function AuthForm() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
-  const [isTestLoginSubmitting, setIsTestLoginSubmitting] = useState(false);
 
   useEffect(() => {
     if (mode !== "sign-up" || signUpStep !== "otp") {
@@ -157,11 +120,11 @@ export function AuthForm() {
   function validateEmail(): boolean {
     setEmailError(null);
     if (!email.trim()) {
-      setEmailError("E-posta zorunludur.");
+      setEmailError(t("auth.emailRequired"));
       return false;
     }
     if (!EMAIL_PATTERN.test(email.trim())) {
-      setEmailError("Geçerli bir e-posta adresi gir.");
+      setEmailError(t("auth.emailInvalid"));
       return false;
     }
     return true;
@@ -179,7 +142,7 @@ export function AuthForm() {
       setSecondsLeft(RESEND_COOLDOWN_SECONDS);
       setOtpResetKey((key) => key + 1);
     } catch (err) {
-      setFormError(toFriendlyOtpError(err));
+      setFormError(toFriendlyOtpError(err, t));
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +156,7 @@ export function AuthForm() {
       setSignupProof(result.proof);
       setSignUpStep("password");
     } catch (err) {
-      setOtpError(toFriendlyOtpError(err));
+      setOtpError(toFriendlyOtpError(err, t));
       setOtpResetKey((key) => key + 1);
     } finally {
       setIsSubmitting(false);
@@ -208,7 +171,7 @@ export function AuthForm() {
       setSecondsLeft(RESEND_COOLDOWN_SECONDS);
       setOtpResetKey((key) => key + 1);
     } catch (err) {
-      setOtpError(toFriendlyOtpError(err));
+      setOtpError(toFriendlyOtpError(err, t));
     } finally {
       setIsSubmitting(false);
     }
@@ -217,11 +180,11 @@ export function AuthForm() {
   function validatePassword(): boolean {
     setPasswordError(null);
     if (!password) {
-      setPasswordError("Şifre zorunludur.");
+      setPasswordError(t("auth.passwordRequired"));
       return false;
     }
     if (password.length < 6) {
-      setPasswordError("Şifre en az 6 karakter olmalı.");
+      setPasswordError(t("auth.passwordTooShort"));
       return false;
     }
     return true;
@@ -233,11 +196,11 @@ export function AuthForm() {
       return;
     }
     if (!isAgreed) {
-      setFormError("Lütfen devam etmeden önce KVKK metnini ve kullanıcı sözleşmesini onaylayın.");
+      setFormError(t("auth.mustAcceptLegalForm"));
       return;
     }
     if (!signupProof) {
-      setFormError("E-posta doğrulaması bulunamadı. Lütfen baştan dene.");
+      setFormError(t("auth.verificationNotFound"));
       setSignUpStep("email");
       return;
     }
@@ -247,7 +210,7 @@ export function AuthForm() {
       await signUpWithPassword(email.trim(), password, isAgreed, signupProof);
       router.replace("/(tabs)/planner");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Bir şeyler ters gitti.");
+      setFormError(err instanceof Error ? err.message : t("auth.errors.generic"));
     } finally {
       setIsSubmitting(false);
     }
@@ -259,7 +222,7 @@ export function AuthForm() {
       return;
     }
     if (!password) {
-      setPasswordError("Şifre zorunludur.");
+      setPasswordError(t("auth.passwordRequired"));
       return;
     }
     setPasswordError(null);
@@ -269,39 +232,9 @@ export function AuthForm() {
       await signInWithPassword(email.trim(), password);
       router.replace("/(tabs)/planner");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Bir şeyler ters gitti.");
+      setFormError(err instanceof Error ? err.message : t("auth.errors.generic"));
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function handleSocialSignIn(provider: SocialProvider) {
-    setFormError(null);
-    setLoadingProvider(provider);
-    try {
-      if (provider === "google") {
-        await signInWithGoogle();
-      } else {
-        await signInWithApple();
-      }
-      router.replace("/(tabs)/planner");
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Bir şeyler ters gitti.");
-    } finally {
-      setLoadingProvider(null);
-    }
-  }
-
-  async function handleTestLogin() {
-    setFormError(null);
-    setIsTestLoginSubmitting(true);
-    try {
-      await signInAsTestUser();
-      router.replace("/(tabs)/planner");
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Test girişi başarısız oldu.");
-    } finally {
-      setIsTestLoginSubmitting(false);
     }
   }
 
@@ -330,7 +263,7 @@ export function AuthForm() {
             letterSpacing: 0.4,
           }}
         >
-          Cilt bakım rutinini takip et
+          {t("auth.tagline")}
         </Text>
       </View>
 
@@ -347,8 +280,8 @@ export function AuthForm() {
           value={mode}
           onValueChange={handleModeChange}
           buttons={[
-            { value: "sign-in", label: "Giriş Yap" },
-            { value: "sign-up", label: "Kayıt Ol" },
+            { value: "sign-in", label: t("auth.signIn") },
+            { value: "sign-up", label: t("auth.signUpTab") },
           ]}
         />
 
@@ -357,7 +290,7 @@ export function AuthForm() {
             <View style={{ gap: 4 }}>
               <TextInput
                 mode="outlined"
-                label="E-posta"
+                label={t("auth.email")}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -372,7 +305,7 @@ export function AuthForm() {
             <View style={{ gap: 4 }}>
               <TextInput
                 mode="outlined"
-                label="Şifre"
+                label={t("auth.password")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -401,7 +334,7 @@ export function AuthForm() {
               style={{ borderRadius: CARD_RADIUS }}
               contentStyle={{ height: 48 }}
             >
-              Giriş Yap
+              {t("auth.signIn")}
             </Button>
           </>
         ) : null}
@@ -411,7 +344,7 @@ export function AuthForm() {
             <View style={{ gap: 4 }}>
               <TextInput
                 mode="outlined"
-                label="E-posta"
+                label={t("auth.email")}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -433,7 +366,7 @@ export function AuthForm() {
               style={{ borderRadius: CARD_RADIUS }}
               contentStyle={{ height: 48 }}
             >
-              Kod Gönder
+              {t("auth.sendCode")}
             </Button>
           </>
         ) : null}
@@ -448,7 +381,7 @@ export function AuthForm() {
                 style={{ margin: 0 }}
               />
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                {email} adresine gönderilen 6 haneli kodu gir.
+                {t("auth.otpSent", { email })}
               </Text>
             </View>
 
@@ -460,20 +393,18 @@ export function AuthForm() {
             <View style={{ alignItems: "center" }}>
               {secondsLeft > 0 ? (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Kodu tekrar gönderebilmek için {formatCooldown(secondsLeft)}
+                  {t("auth.resendCooldown", { time: secondsLeft })}
                 </Text>
               ) : (
-                <Button mode="text" onPress={handleResendOtp} loading={isSubmitting}>
-                  Kodu Tekrar Gönder
+                <Button mode="text" onPress={handleResendOtp} loading={isSubmitting} disabled={isSubmitting}>
+                  {t("auth.resendCode")}
                 </Button>
               )}
             </View>
 
-            {__DEV__ ? (
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
-                Geliştirme test kodu: 123456
-              </Text>
-            ) : null}
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
+              {t("auth.checkSpamNote")}
+            </Text>
           </>
         ) : null}
 
@@ -495,14 +426,14 @@ export function AuthForm() {
                 color={theme.colors.onTertiaryContainer}
               />
               <Text variant="bodySmall" style={{ color: theme.colors.onTertiaryContainer, flex: 1 }}>
-                {email} doğrulandı. Şimdi bir şifre belirle.
+                {t("auth.emailVerified", { email })}
               </Text>
             </View>
 
             <View style={{ gap: 4 }}>
               <TextInput
                 mode="outlined"
-                label="Şifre"
+                label={t("auth.password")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -531,22 +462,23 @@ export function AuthForm() {
                 style={{ flex: 1, color: theme.colors.onSurfaceVariant, marginTop: 10 }}
                 onPress={() => setIsAgreed((current) => !current)}
               >
+                {t("legal.consentBefore")}
                 <Text
                   variant="bodySmall"
                   style={{ color: theme.colors.primary, fontWeight: "700" }}
                   onPress={() => setLegalModalType("terms")}
                 >
-                  Kullanıcı Sözleşmesi
+                  {t("legal.termsLink")}
                 </Text>
-                &apos;ni ve{" "}
+                {t("legal.consentBetween")}
                 <Text
                   variant="bodySmall"
                   style={{ color: theme.colors.primary, fontWeight: "700" }}
                   onPress={() => setLegalModalType("kvkk")}
                 >
-                  KVKK Aydınlatma Metni
+                  {t("legal.kvkkLink")}
                 </Text>
-                &apos;ni okudum, kişisel verilerimin işlenmesini onaylıyorum.
+                {t("legal.consentAfter")}
               </Text>
             </View>
 
@@ -560,43 +492,11 @@ export function AuthForm() {
               style={{ borderRadius: CARD_RADIUS }}
               contentStyle={{ height: 48 }}
             >
-              Kaydol
+              {t("auth.registerSubmit")}
             </Button>
           </>
         ) : null}
-
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 4 }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.outlineVariant }} />
-          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            veya
-          </Text>
-          <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.outlineVariant }} />
-        </View>
-
-        <View style={{ gap: 10 }}>
-          <SocialSignInButton
-            provider="google"
-            loading={loadingProvider === "google"}
-            onPress={() => handleSocialSignIn("google")}
-          />
-          <SocialSignInButton
-            provider="apple"
-            loading={loadingProvider === "apple"}
-            onPress={() => handleSocialSignIn("apple")}
-          />
-        </View>
       </View>
-
-      {__DEV__ ? (
-        <Button
-          mode="text"
-          onPress={handleTestLogin}
-          loading={isTestLoginSubmitting}
-          style={{ marginTop: 16 }}
-        >
-          Test Kullanıcısı ile Hızlı Giriş
-        </Button>
-      ) : null}
 
       <LegalModal documentType={legalModalType} onDismiss={() => setLegalModalType(null)} />
       </ScrollView>

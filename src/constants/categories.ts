@@ -1,5 +1,7 @@
 import type * as React from "react";
 
+import type { TranslationKey } from "@/i18n/LocaleContext";
+
 export const CATEGORIES = [
   "cleanser",
   "toner",
@@ -14,16 +16,17 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
-export const CATEGORY_LABELS_TR: Record<Category, string> = {
-  cleanser: "Temizleyici",
-  toner: "Tonik",
-  serum: "Serum",
-  moisturizer: "Nemlendirici",
-  spf: "Güneş Koruyucu",
-  "eye-care": "Göz Bakımı",
-  "hair-care": "Saç Bakımı",
-  "body-care": "Vücut Bakımı",
-  other: "Diğer",
+/** Kategori adları artık i18n anahtarı — UI'da `t(CATEGORY_LABEL_KEYS[category])` ile çevrilir. */
+export const CATEGORY_LABEL_KEYS: Record<Category, TranslationKey> = {
+  cleanser: "categories.cleanser",
+  toner: "categories.toner",
+  serum: "categories.serum",
+  moisturizer: "categories.moisturizer",
+  spf: "categories.spf",
+  "eye-care": "categories.eyeCare",
+  "hair-care": "categories.hairCare",
+  "body-care": "categories.bodyCare",
+  other: "categories.other",
 };
 
 type MaterialCommunityIconName = React.ComponentProps<

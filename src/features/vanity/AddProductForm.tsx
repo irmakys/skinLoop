@@ -4,8 +4,9 @@ import { ScrollView } from "react-native";
 import { Button, HelperText, Text, TextInput } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
-import { CATEGORY_LABELS_TR, type Category } from "@/constants/categories";
+import { CATEGORY_LABEL_KEYS, type Category } from "@/constants/categories";
 import { CategoryPickerDialog } from "@/features/vanity/CategoryPickerDialog";
+import { useLocale } from "@/i18n/LocaleContext";
 import type { OpenBeautyFactsProduct } from "@/lib/openBeautyFacts";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 import { CARD_RADIUS } from "@/theme/theme";
@@ -17,6 +18,7 @@ type AddProductFormProps = {
 };
 
 export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProps) {
+  const { t } = useLocale();
   const addProduct = useMutation(api.products.addProduct);
 
   const [name, setName] = useState(prefill?.name ?? "");
@@ -32,11 +34,11 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
 
     const paoMonthsValue = Number(paoMonths);
     if (!name.trim()) {
-      setError("Ürün adı zorunludur.");
+      setError(t("vanity.nameRequired"));
       return;
     }
     if (!Number.isFinite(paoMonthsValue) || paoMonthsValue <= 0) {
-      setError("PAO süresi (ay) geçerli bir sayı olmalı.");
+      setError(t("vanity.paoInvalid"));
       return;
     }
 
@@ -53,7 +55,7 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ürün kaydedilemedi.");
+      setError(err instanceof Error ? err.message : t("vanity.addSaveFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -61,9 +63,9 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
-      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, marginBottom: 4 }}>Ürün Ekle</Text>
-      <TextInput mode="outlined" label="Ürün Adı" value={name} onChangeText={setName} />
-      <TextInput mode="outlined" label="Marka" value={brand} onChangeText={setBrand} />
+      <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, marginBottom: 4 }}>{t("vanity.addProductTitle")}</Text>
+      <TextInput mode="outlined" label={t("vanity.nameLabel")} value={name} onChangeText={setName} />
+      <TextInput mode="outlined" label={t("vanity.brandLabel")} value={brand} onChangeText={setBrand} />
 
       <Button
         mode="outlined"
@@ -71,7 +73,7 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
         onPress={() => setCategoryDialogVisible(true)}
         style={{ borderRadius: CARD_RADIUS }}
       >
-        {CATEGORY_LABELS_TR[category]}
+        {t(CATEGORY_LABEL_KEYS[category])}
       </Button>
       <CategoryPickerDialog
         visible={categoryDialogVisible}
@@ -82,7 +84,7 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
 
       <TextInput
         mode="outlined"
-        label="PAO (ay)"
+        label={t("vanity.paoLabel")}
         value={paoMonths}
         onChangeText={setPaoMonths}
         keyboardType="numeric"
@@ -97,7 +99,7 @@ export function AddProductForm({ prefill, barcode, onSaved }: AddProductFormProp
         style={{ borderRadius: CARD_RADIUS, marginTop: 8 }}
         contentStyle={{ paddingVertical: 4 }}
       >
-        Kaydet
+        {t("common.save")}
       </Button>
     </ScrollView>
   );

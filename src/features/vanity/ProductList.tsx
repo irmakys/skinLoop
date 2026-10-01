@@ -1,18 +1,21 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
-import { FlatList, View } from "react-native";
-import { Button, Dialog, Portal, Text, useTheme } from "react-native-paper";
+import { useCallback, useState } from "react";
+import { FlatList, type ListRenderItem, View } from "react-native";
+import { Button, Text, useTheme } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
-import type { Id } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
+import { AppDialog } from "@/components/AppDialog";
 import type { Category } from "@/constants/categories";
 import { EditProductDialog, type EditableProduct } from "@/features/vanity/EditProductDialog";
 import { ProductCard } from "@/features/vanity/ProductCard";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
+import { useLocale } from "@/i18n/LocaleContext";
 
 export function ProductList() {
   const theme = useTheme();
+  const { t } = useLocale();
   const bottomClearance = useBottomClearance();
   const products = useQuery(api.products.listProducts);
   const deleteProduct = useMutation(api.products.deleteProduct);
@@ -34,6 +37,31 @@ export function ProductList() {
     }
   }
 
+  // Referansı sabit tutar: aksi halde her render'da (ör. bir dialog açılıp
+  // kapandığında) yeni bir renderItem oluşturulur ve altındaki memo'lu
+  // ProductCard'ların hepsi gereksiz yeniden render olur.
+  const renderItem: ListRenderItem<Doc<"products">> = useCallback(
+    ({ item }) => (
+      <ProductCard
+        name={item.name}
+        brand={item.brand ?? null}
+        category={item.category as Category}
+        expiresAt={item.expiresAt}
+        onEdit={() =>
+          setEditingProduct({
+            _id: item._id,
+            name: item.name,
+            brand: item.brand,
+            category: item.category as Category,
+            paoMonths: item.paoMonths,
+          })
+        }
+        onDelete={() => setDeletingProductId(item._id)}
+      />
+    ),
+    [],
+  );
+
   if (products === undefined) {
     return null;
   }
@@ -42,7 +70,7 @@ export function ProductList() {
     return (
       <View style={{ flex: 1, padding: 32, alignItems: "center", justifyContent: "center", gap: 8 }}>
         <MaterialCommunityIcons name="bottle-tonic-outline" size={40} color={theme.colors.outline} />
-        <Text style={{ color: theme.colors.onSurfaceVariant }}>Henüz ürün eklenmedi.</Text>
+        <Text style={{ color: theme.colors.onSurfaceVariant }}>{t("vanity.emptyState")}</Text>
       </View>
     );
   }
@@ -53,45 +81,30 @@ export function ProductList() {
         data={products}
         keyExtractor={(item) => item._id}
         contentContainerStyle={{ padding: 20, paddingBottom: bottomClearance, gap: 14 }}
-        renderItem={({ item }) => (
-          <ProductCard
-            name={item.name}
-            brand={item.brand ?? null}
-            category={item.category as Category}
-            expiresAt={item.expiresAt}
-            onEdit={() =>
-              setEditingProduct({
-                _id: item._id,
-                name: item.name,
-                brand: item.brand,
-                category: item.category as Category,
-                paoMonths: item.paoMonths,
-              })
-            }
-            onDelete={() => setDeletingProductId(item._id)}
-          />
-        )}
+        renderItem={renderItem}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
       />
 
       <EditProductDialog product={editingProduct} onDismiss={() => setEditingProduct(null)} />
 
-      <Portal>
-        <Dialog visible={deletingProductId !== null} onDismiss={() => setDeletingProductId(null)}>
-          <Dialog.Title>Ürünü Sil</Dialog.Title>
-          <Dialog.Content>
-            <Text>
-              Bu ürünü silmek istediğine emin misin? Ürünü kullanan rutin adımları &quot;ürün eksik&quot; olarak
-              işaretlenecek.
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setDeletingProductId(null)}>Vazgeç</Button>
+      <AppDialog
+        visible={deletingProductId !== null}
+        onDismiss={() => setDeletingProductId(null)}
+        title={t("vanity.deleteProductTitle")}
+        actions={
+          <>
+            <Button onPress={() => setDeletingProductId(null)}>{t("common.cancel")}</Button>
             <Button onPress={handleConfirmDelete} loading={isDeleting} textColor={theme.colors.error}>
-              Sil
+              {t("common.delete")}
             </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+          </>
+        }
+      >
+        <Text>{t("vanity.deleteProductBody")}</Text>
+      </AppDialog>
     </>
   );
 }

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/AppHeader";
 import { LegalConsentGate } from "@/features/auth/LegalConsentGate";
+import { useLocale } from "@/i18n/LocaleContext";
 import { hexToRgba } from "@/theme/theme";
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
@@ -34,6 +35,7 @@ function TabIcon({ name, color, focused }: { name: IconName; color: ColorValue; 
 export default function TabsLayout() {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const theme = useTheme();
+  const { t } = useLocale();
   const insets = useSafeAreaInsets();
 
   if (!isLoading && !isAuthenticated) {
@@ -80,7 +82,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="planner"
           options={{
-            title: "Planlayıcı",
+            title: t("tabs.planner"),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="calendar-today" color={color} focused={focused} />
             ),
@@ -89,7 +91,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="loops/index"
           options={{
-            title: "Rutinler",
+            title: t("tabs.loops"),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="calendar-check-outline" color={color} focused={focused} />
             ),
@@ -98,7 +100,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="vanity/index"
           options={{
-            title: "Ürünlerim",
+            title: t("tabs.vanity"),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="bottle-tonic-outline" color={color} focused={focused} />
             ),
@@ -107,7 +109,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="journal/index"
           options={{
-            title: "Galeri",
+            title: t("tabs.journal"),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="image-multiple-outline" color={color} focused={focused} />
             ),
@@ -116,7 +118,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: "Ayarlar",
+            title: t("tabs.settings"),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="cog-outline" color={color} focused={focused} />
             ),
@@ -124,10 +126,10 @@ export default function TabsLayout() {
         />
 
         {/* Form/işlem alt sayfaları — sekme çubuğunda gösterilmez, ama aynı üst başlık bloğunu paylaşır */}
-        <Tabs.Screen name="vanity/add" options={{ href: null, title: "Ürün Ekle" }} />
-        <Tabs.Screen name="journal/capture" options={{ href: null, title: "Fotoğraf Çek" }} />
-        <Tabs.Screen name="journal/compare" options={{ href: null, title: "Karşılaştır" }} />
-        <Tabs.Screen name="reports" options={{ href: null, title: "Rutin Raporu" }} />
+        <Tabs.Screen name="vanity/add" options={{ href: null, title: t("tabs.addProduct") }} />
+        <Tabs.Screen name="journal/capture" options={{ href: null, title: t("tabs.capturePhoto") }} />
+        <Tabs.Screen name="journal/compare" options={{ href: null, title: t("tabs.compare") }} />
+        <Tabs.Screen name="reports" options={{ href: null, title: t("tabs.routineReport") }} />
       </Tabs>
     </LegalConsentGate>
   );

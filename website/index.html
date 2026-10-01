@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BeautyLoop — Cilt Bakım Rutini Takip Uygulaması</title>
+  <meta name="description" content="BeautyLoop, kozmetik ürün envanterini ve cilt bakım rutinlerini takip etmene yardımcı olan mobil uygulama." />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/"><span class="dot"></span> BeautyLoop</a>
+    <nav class="site-nav">
+      <a href="/privacy.html">Gizlilik Politikası</a>
+      <a href="/terms.html">Kullanım Şartları</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <h1>Cilt bakım rutinini takip et.</h1>
+      <p class="tagline">Ürünlerini kaydet, sabah/akşam rutinlerini oluştur, ilerlemeni Cilt Günlüğü ile takip et.</p>
+
+      <div class="store-badges">
+        <a class="soon" href="#" aria-disabled="true">App Store — Yakında</a>
+        <a class="soon" href="#" aria-disabled="true">Google Play — Yakında</a>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <h3>Ürün Envanterin</h3>
+        <p>Barkod tarayarak veya manuel ekleyerek kozmetik ürünlerini ve son kullanma tarihlerini takip et.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Rutin Oluştur</h3>
+        <p>Sabah, akşam, haftalık veya aylık rutinler oluştur; hatırlatıcılarla asla atlamayasın.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Cilt Günlüğü</h3>
+        <p>Fotoğraflarınla ilerlemeni karşılaştır — fotoğraflar yalnızca cihazında saklanır.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <a href="/privacy.html">Gizlilik Politikası</a> ·
+      <a href="/terms.html">Kullanım Şartları</a>
+    </div>
+    <div style="margin-top: 8px;">© <span id="year"></span> BeautyLoop. Tüm hakları saklıdır.</div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

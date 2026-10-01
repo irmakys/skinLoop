@@ -8,13 +8,11 @@ import { SegmentedButtons, Text, useTheme } from "react-native-paper";
 import { AmbientBackground } from "@/components/AmbientBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
-import { toDayKey } from "@/lib/dateKeys";
+import { useLocale } from "@/i18n/LocaleContext";
+import { SHORT_WEEKDAY_SUNDAY_FIRST_KEYS, toDayKey } from "@/lib/dateKeys";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 
 type Range = "week" | "month";
-
-/** `Date.getDay()` (0=Pazar) sırasına göre kısa Türkçe gün etiketleri. */
-const SHORT_WEEKDAY_TR = ["Pz", "Pt", "Sa", "Ça", "Pe", "Cu", "Ct"];
 
 function lastNDays(n: number): Date[] {
   const today = new Date();
@@ -56,6 +54,7 @@ function StatTile({ label, value, color }: { label: string; value: string | numb
  */
 export default function ReportsScreen() {
   const theme = useTheme();
+  const { t } = useLocale();
   const bottomClearance = useBottomClearance();
   const [range, setRange] = useState<Range>("week");
 
@@ -77,7 +76,7 @@ export default function ReportsScreen() {
     if (range === "week") {
       return days.map((date) => ({
         value: counts.get(toDayKey(date)) ?? 0,
-        label: SHORT_WEEKDAY_TR[date.getDay()],
+        label: t(SHORT_WEEKDAY_SUNDAY_FIRST_KEYS[date.getDay()]),
         frontColor: theme.colors.primary,
       }));
     }
@@ -90,10 +89,10 @@ export default function ReportsScreen() {
     });
     return buckets.map((value, index) => ({
       value,
-      label: `${index + 1}. Hf.`,
+      label: t("reports.weekLabel", { number: index + 1 }),
       frontColor: theme.colors.primary,
     }));
-  }, [completions, days, range, theme.colors.primary]);
+  }, [completions, days, range, theme.colors.primary, t]);
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
   const best = chartData.reduce((max, item) => Math.max(max, item.value), 0);
@@ -106,17 +105,17 @@ export default function ReportsScreen() {
           value={range}
           onValueChange={(value) => setRange(value as Range)}
           buttons={[
-            { value: "week", label: "Bu Hafta" },
-            { value: "month", label: "Bu Ay" },
+            { value: "week", label: t("reports.thisWeek") },
+            { value: "month", label: t("reports.thisMonth") },
           ]}
         />
 
         <GlassCard padding={22}>
           <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 19, color: theme.colors.onSurface, marginBottom: 18 }}>
-            {range === "week" ? "Günlük Tamamlama" : "Haftalık Tamamlama"}
+            {range === "week" ? t("reports.dailyCompletion") : t("reports.weeklyCompletion")}
           </Text>
           {completions === undefined ? (
-            <Text style={{ color: theme.colors.onSurfaceVariant }}>Yükleniyor…</Text>
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>{t("reports.loading")}</Text>
           ) : (
             <BarChart
               data={chartData}
@@ -136,13 +135,13 @@ export default function ReportsScreen() {
         </GlassCard>
 
         <View style={{ flexDirection: "row", gap: 14 }}>
-          <StatTile label="Toplam Tamamlama" value={total} color={theme.colors.primary} />
+          <StatTile label={t("reports.totalCompletions")} value={total} color={theme.colors.primary} />
           <StatTile
-            label={range === "week" ? "En İyi Gün" : "En İyi Hafta"}
+            label={range === "week" ? t("reports.bestDay") : t("reports.bestWeek")}
             value={best}
             color={theme.colors.tertiary}
           />
-          <StatTile label="Ortalama" value={average} color={theme.colors.secondary} />
+          <StatTile label={t("reports.average")} value={average} color={theme.colors.secondary} />
         </View>
       </ScrollView>
     </AmbientBackground>

@@ -1,10 +1,12 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { View } from "react-native";
-import { Button, Checkbox, Dialog, HelperText, Portal, Text } from "react-native-paper";
+import { Button, Checkbox, HelperText, Text } from "react-native-paper";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { AppDialog } from "@/components/AppDialog";
+import { useLocale } from "@/i18n/LocaleContext";
 
 type Product = { _id: Id<"products">; name: string };
 
@@ -18,6 +20,7 @@ type AddLoopStepDialogProps = {
 
 /** Var olan bir rutine sonradan ürün eklemek için ürün listesi diyaloğu. */
 export function AddLoopStepDialog({ loopId, existingProductIds, products, onDismiss }: AddLoopStepDialogProps) {
+  const { t } = useLocale();
   const addLoopStep = useMutation(api.loops.addLoopStep);
   const [pendingProductId, setPendingProductId] = useState<Id<"products"> | null>(null);
   const [isOptional, setIsOptional] = useState(false);
@@ -34,54 +37,52 @@ export function AddLoopStepDialog({ loopId, existingProductIds, products, onDism
     try {
       await addLoopStep({ loopId, productId, isOptional });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ürün eklenemedi.");
+      setError(err instanceof Error ? err.message : t("loops.addProductFailed"));
     } finally {
       setPendingProductId(null);
     }
   }
 
   return (
-    <Portal>
-      <Dialog visible={loopId !== null} onDismiss={onDismiss}>
-        <Dialog.Title>Rutine Ürün Ekle</Dialog.Title>
-        <Dialog.Content style={{ gap: 4 }}>
-          <Checkbox.Item
-            label="Opsiyonel adım (Tembel Mod'da atlanır)"
-            labelStyle={{ fontSize: 13 }}
-            status={isOptional ? "checked" : "unchecked"}
-            onPress={() => setIsOptional((current) => !current)}
-            style={{ paddingHorizontal: 0 }}
-          />
+    <AppDialog
+      visible={loopId !== null}
+      onDismiss={onDismiss}
+      title={t("loops.addProductToLoopTitle")}
+      contentGap={4}
+      actions={<Button onPress={onDismiss}>{t("common.close")}</Button>}
+    >
+      <Checkbox.Item
+        label={t("loops.optionalStep")}
+        labelStyle={{ fontSize: 13 }}
+        status={isOptional ? "checked" : "unchecked"}
+        onPress={() => setIsOptional((current) => !current)}
+        style={{ paddingHorizontal: 0 }}
+      />
 
-          {availableProducts.length === 0 ? (
-            <Text>Eklenebilecek başka ürün yok — önce Ürünlerim&apos;e yeni ürün ekle.</Text>
-          ) : (
-            availableProducts.map((product) => (
-              <View
-                key={product._id}
-                style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 6 }}
-              >
-                <Text style={{ flex: 1 }} numberOfLines={1}>
-                  {product.name}
-                </Text>
-                <Button
-                  compact
-                  mode="outlined"
-                  loading={pendingProductId === product._id}
-                  onPress={() => handleAdd(product._id)}
-                >
-                  Ekle
-                </Button>
-              </View>
-            ))
-          )}
+      {availableProducts.length === 0 ? (
+        <Text>{t("loops.noMoreProducts")}</Text>
+      ) : (
+        availableProducts.map((product) => (
+          <View
+            key={product._id}
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingVertical: 6 }}
+          >
+            <Text style={{ flex: 1, flexShrink: 1 }} numberOfLines={2}>
+              {product.name}
+            </Text>
+            <Button
+              compact
+              mode="outlined"
+              loading={pendingProductId === product._id}
+              onPress={() => handleAdd(product._id)}
+            >
+              {t("common.add")}
+            </Button>
+          </View>
+        ))
+      )}
 
-          {error ? <HelperText type="error">{error}</HelperText> : null}
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={onDismiss}>Kapat</Button>
-        </Dialog.Actions>
-      </Dialog>
-    </Portal>
+      {error ? <HelperText type="error">{error}</HelperText> : null}
+    </AppDialog>
   );
 }

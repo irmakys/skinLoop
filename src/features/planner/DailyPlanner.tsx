@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useMutation, useQuery } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import type * as React from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Chip, IconButton, Switch, Text, useTheme } from "react-native-paper";
@@ -12,19 +12,20 @@ import { CircularProgress } from "@/components/CircularProgress";
 import { GlassCard } from "@/components/GlassCard";
 import { DayStrip } from "@/features/planner/DayStrip";
 import { MonthCalendarDialog } from "@/features/planner/MonthCalendarDialog";
+import { useLocale, type TranslationKey } from "@/i18n/LocaleContext";
 import { getWeekDates, toDayKey } from "@/lib/dateKeys";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { PREMIUM_ACCENT, THEME_GRADIENTS, glowShadow, hexToRgba } from "@/theme/theme";
+import { PREMIUM_ACCENT, THEME_GRADIENTS, glowShadow, hexToRgba, isPatternedTheme } from "@/theme/theme";
 import { useAppTheme } from "@/theme/ThemeContext";
 import { useBottomClearance } from "@/hooks/useBottomClearance";
 
 type LoopWithSteps = Doc<"loops"> & { steps: Doc<"loopSteps">[] };
 
-const LOOP_TYPE_LABELS_TR: Record<string, string> = {
-  morning: "Sabah Rutini",
-  evening: "Akşam Rutini",
-  weekly: "Haftalık",
-  monthly: "Aylık",
+const LOOP_TYPE_LABEL_KEYS: Record<string, TranslationKey> = {
+  morning: "loops.morningRoutine",
+  evening: "loops.eveningRoutine",
+  weekly: "loops.typeWeekly",
+  monthly: "loops.typeMonthly",
 };
 
 const LOOP_TYPE_ICONS: Record<string, React.ComponentProps<typeof MaterialCommunityIcons>["name"]> = {
@@ -34,7 +35,7 @@ const LOOP_TYPE_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
   monthly: "calendar-month-outline",
 };
 
-function LoopSection({
+const LoopSection = memo(function LoopSection({
   loop,
   productsById,
   completedStepIds,
@@ -49,6 +50,8 @@ function LoopSection({
 }) {
   const theme = useTheme();
   const { themeId } = useAppTheme();
+  const { t } = useLocale();
+  const leopard = isPatternedTheme(themeId);
   const steps = lazyMode ? loop.steps.filter((step) => !step.isOptional) : loop.steps;
 
   if (steps.length === 0) {
@@ -60,14 +63,30 @@ function LoopSection({
   return (
     <GlassCard padding={20} style={{ gap: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <LinearGradient
-          colors={THEME_GRADIENTS[themeId]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ width: 44, height: 44, borderRadius: 16, alignItems: "center", justifyContent: "center" }}
-        >
-          <MaterialCommunityIcons name={LOOP_TYPE_ICONS[loop.type]} size={22} color="#FFFFFF" />
-        </LinearGradient>
+        {leopard ? (
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              borderWidth: 2,
+              borderColor: theme.colors.primary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <MaterialCommunityIcons name={LOOP_TYPE_ICONS[loop.type]} size={20} color={theme.colors.primary} />
+          </View>
+        ) : (
+          <LinearGradient
+            colors={THEME_GRADIENTS[themeId]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ width: 44, height: 44, borderRadius: 16, alignItems: "center", justifyContent: "center" }}
+          >
+            <MaterialCommunityIcons name={LOOP_TYPE_ICONS[loop.type]} size={22} color="#FFFFFF" />
+          </LinearGradient>
+        )}
         <View style={{ flex: 1 }}>
           <Text
             style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 17, color: theme.colors.onSurface }}
@@ -76,7 +95,7 @@ function LoopSection({
             {loop.name}
           </Text>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            {LOOP_TYPE_LABELS_TR[loop.type]} · {doneCount}/{steps.length} tamamlandı
+            {t(LOOP_TYPE_LABEL_KEYS[loop.type])} · {t("loops.sectionProgress", { done: doneCount, total: steps.length })}
           </Text>
         </View>
       </View>
@@ -139,11 +158,11 @@ function LoopSection({
                 }}
                 numberOfLines={1}
               >
-                {index + 1}. {step.missingProduct ? "Ürün eksik" : (product?.name ?? "…")}
+                {index + 1}. {step.missingProduct ? t("loops.productMissingShort") : (product?.name ?? "…")}
               </Text>
               {step.isOptional ? (
                 <Chip compact style={{ backgroundColor: theme.colors.surfaceVariant }} textStyle={{ fontSize: 10 }}>
-                  Opsiyonel
+                  {t("loops.optionalBadge")}
                 </Chip>
               ) : null}
             </Pressable>
@@ -152,9 +171,9 @@ function LoopSection({
       </View>
     </GlassCard>
   );
-}
+});
 
-function StatBox({
+const StatBox = memo(function StatBox({
   icon,
   value,
   label,
@@ -165,23 +184,41 @@ function StatBox({
 }) {
   const theme = useTheme();
   const { themeId } = useAppTheme();
+  const leopard = isPatternedTheme(themeId);
   return (
     <GlassCard padding={18} style={{ flex: 1, gap: 2 }}>
-      <LinearGradient
-        colors={THEME_GRADIENTS[themeId]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 9,
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 12,
-        }}
-      >
-        <MaterialCommunityIcons name={icon} size={14} color="#FFFFFF" />
-      </LinearGradient>
+      {leopard ? (
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            borderWidth: 2,
+            borderColor: theme.colors.primary,
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 12,
+          }}
+        >
+          <MaterialCommunityIcons name={icon} size={20} color={theme.colors.primary} />
+        </View>
+      ) : (
+        <LinearGradient
+          colors={THEME_GRADIENTS[themeId]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 9,
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 12,
+          }}
+        >
+          <MaterialCommunityIcons name={icon} size={14} color="#FFFFFF" />
+        </LinearGradient>
+      )}
       <Text
         style={{
           fontFamily: FONT_DISPLAY_BOLD,
@@ -207,10 +244,11 @@ function StatBox({
       </Text>
     </GlassCard>
   );
-}
+});
 
 export function DailyPlanner() {
   const theme = useTheme();
+  const { t } = useLocale();
   const bottomClearance = useBottomClearance();
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [lazyMode, setLazyMode] = useState(false);
@@ -224,6 +262,10 @@ export function DailyPlanner() {
   const weekStartKey = toDayKey(weekDates[0]);
   const weekEndKey = toDayKey(weekDates[6]);
   const selectedDayKey = toDayKey(selectedDate);
+  const handleToggleStep = useCallback(
+    (stepId: Id<"loopSteps">) => toggleCompletion({ stepId, dayKey: selectedDayKey }),
+    [toggleCompletion, selectedDayKey],
+  );
 
   const completionsInRange = useQuery(api.loops.listCompletionsInRange, {
     startDayKey: weekStartKey,
@@ -292,16 +334,16 @@ export function DailyPlanner() {
         <StatBox
           icon="check-circle-outline"
           value={`${todaysCompletedSteps}/${todaysTotalSteps}`}
-          label="Bugünkü İlerleme"
+          label={t("planner.todayProgress")}
         />
-        <StatBox icon="calendar-check-outline" value={String(loops.length)} label="Aktif Rutin" />
-        <StatBox icon="bottle-tonic-outline" value={String(products?.length ?? 0)} label="Ürün Sayısı" />
+        <StatBox icon="calendar-check-outline" value={String(loops.length)} label={t("planner.activeLoops")} />
+        <StatBox icon="bottle-tonic-outline" value={String(products?.length ?? 0)} label={t("planner.productCount")} />
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <MaterialCommunityIcons name="lightning-bolt-outline" size={20} color={theme.colors.primary} />
-          <Text variant="labelLarge">Tembel Mod</Text>
+          <Text variant="labelLarge">{t("planner.lazyMode")}</Text>
         </View>
         <Switch value={lazyMode} onValueChange={setLazyMode} />
       </View>
@@ -309,9 +351,7 @@ export function DailyPlanner() {
       {loops.length === 0 ? (
         <View style={{ padding: 32, alignItems: "center", gap: 8 }}>
           <MaterialCommunityIcons name="calendar-blank-outline" size={40} color={theme.colors.outline} />
-          <Text style={{ color: theme.colors.onSurfaceVariant }}>
-            Henüz bir rutin oluşturulmadı. Rutinler sekmesinden başlayabilirsin.
-          </Text>
+          <Text style={{ color: theme.colors.onSurfaceVariant }}>{t("planner.emptyState")}</Text>
         </View>
       ) : (
         <View style={{ paddingHorizontal: 20, gap: 16 }}>
@@ -322,7 +362,7 @@ export function DailyPlanner() {
               productsById={productsById}
               completedStepIds={completedStepIdsForSelectedDay}
               lazyMode={lazyMode}
-              onToggleStep={(stepId) => toggleCompletion({ stepId, dayKey: selectedDayKey })}
+              onToggleStep={handleToggleStep}
             />
           ))}
           {eveningLoops.map((loop) => (
@@ -332,7 +372,7 @@ export function DailyPlanner() {
               productsById={productsById}
               completedStepIds={completedStepIdsForSelectedDay}
               lazyMode={lazyMode}
-              onToggleStep={(stepId) => toggleCompletion({ stepId, dayKey: selectedDayKey })}
+              onToggleStep={handleToggleStep}
             />
           ))}
           {otherLoops.map((loop) => (
@@ -342,7 +382,7 @@ export function DailyPlanner() {
               productsById={productsById}
               completedStepIds={completedStepIdsForSelectedDay}
               lazyMode={lazyMode}
-              onToggleStep={(stepId) => toggleCompletion({ stepId, dayKey: selectedDayKey })}
+              onToggleStep={handleToggleStep}
             />
           ))}
         </View>
@@ -365,10 +405,10 @@ export function DailyPlanner() {
           </CircularProgress>
           <View style={{ flex: 1, gap: 5 }}>
             <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 20, color: theme.colors.onSurface }}>
-              Haftalık Uyum Skoru
+              {t("planner.weeklyScoreTitle")}
             </Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Bu hafta tamamladığın adımların rutinlerine oranı.
+              {t("planner.weeklyScoreDesc")}
             </Text>
           </View>
         </GlassCard>

@@ -3,13 +3,14 @@ import { ScrollView, View } from "react-native";
 import { IconButton, Modal, Portal, Text, useTheme } from "react-native-paper";
 
 import { KVKK_DISCLOSURE_TEXT, TERMS_AND_CONSENT_TEXT } from "@/features/auth/legalContent";
+import { useLocale, type TranslationKey } from "@/i18n/LocaleContext";
 import { CARD_RADIUS } from "@/theme/theme";
 
 export type LegalDocumentType = "kvkk" | "terms";
 
-const TITLES: Record<LegalDocumentType, string> = {
-  kvkk: "KVKK Aydınlatma Metni",
-  terms: "Kullanıcı Sözleşmesi & Açık Rıza Metni",
+const TITLE_KEYS: Record<LegalDocumentType, TranslationKey> = {
+  kvkk: "legal.kvkkModalTitle",
+  terms: "legal.termsModalTitle",
 };
 
 const CONTENTS: Record<LegalDocumentType, string> = {
@@ -29,6 +30,7 @@ type LegalModalProps = {
  */
 export function LegalModal({ documentType, onDismiss }: LegalModalProps) {
   const theme = useTheme();
+  const { t } = useLocale();
 
   return (
     <Portal>
@@ -54,7 +56,7 @@ export function LegalModal({ documentType, onDismiss }: LegalModalProps) {
           }}
         >
           <Text variant="titleMedium" style={{ fontWeight: "700", flex: 1 }} numberOfLines={2}>
-            {documentType ? TITLES[documentType] : ""}
+            {documentType ? t(TITLE_KEYS[documentType]) : ""}
           </Text>
           <IconButton icon="close" onPress={onDismiss} />
         </View>
@@ -72,8 +74,7 @@ export function LegalModal({ documentType, onDismiss }: LegalModalProps) {
           >
             <MaterialCommunityIcons name="information-outline" size={18} color={theme.colors.onSecondaryContainer} />
             <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, flex: 1 }}>
-              Bu metin bir taslaktır; köşeli parantez içindeki alanlar yayına almadan önce
-              doldurulmalı ve bir hukuk danışmanına onaylatılmalıdır.
+              {t("legal.draftNotice")}
             </Text>
           </View>
 

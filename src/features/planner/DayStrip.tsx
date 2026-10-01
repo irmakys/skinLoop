@@ -2,7 +2,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 
-import { WEEKDAY_LABELS_TR, isSameDay } from "@/lib/dateKeys";
+import { useLocale } from "@/i18n/LocaleContext";
+import { WEEKDAY_KEYS, isSameDay } from "@/lib/dateKeys";
 import { THEME_GRADIENTS, glowShadow } from "@/theme/theme";
 import { useAppTheme } from "@/theme/ThemeContext";
 
@@ -15,6 +16,7 @@ type DayStripProps = {
 export function DayStrip({ weekDates, selectedDate, onSelect }: DayStripProps) {
   const theme = useTheme();
   const { themeId } = useAppTheme();
+  const { t } = useLocale();
   const today = new Date();
 
   return (
@@ -40,7 +42,7 @@ export function DayStrip({ weekDates, selectedDate, onSelect }: DayStripProps) {
               variant="labelSmall"
               style={{ color: selected ? "#FFFFFF" : theme.colors.onSurfaceVariant }}
             >
-              {WEEKDAY_LABELS_TR[index]}
+              {t(WEEKDAY_KEYS[index])}
             </Text>
             <Text
               variant="titleMedium"

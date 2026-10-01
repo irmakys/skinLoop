@@ -14,7 +14,7 @@ export const KVKK_CONSENT_VERSION_LABEL = "v1.0";
 export const KVKK_DISCLOSURE_TEXT = `KVKK AYDINLATMA METNİ (Taslak — ${KVKK_CONSENT_VERSION_LABEL})
 
 Veri Sorumlusu
-[Şirket/Uygulama Adı] ("BeautyLoop", "biz"), 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla, aşağıda açıklanan kapsamda kişisel verilerinizi işlemektedir.
+BeautyLoop ("biz"), 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla, aşağıda açıklanan kapsamda kişisel verilerinizi işlemektedir.
 
 1. Toplanan Kişisel Veriler
 BeautyLoop uygulamasını kullanırken aşağıdaki veriler işlenir:
@@ -36,7 +36,7 @@ Verileriniz, hesabınız aktif olduğu sürece saklanır. Hesabınızı Ayarlar 
 KVKK'nın 11. maddesi uyarınca; verilerinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içi/yurt dışı aktarıldığı üçüncü kişileri bilme, eksik/yanlış işlenmişse düzeltilmesini isteme, silinmesini/yok edilmesini isteme ve bu işlemlerin aktarıldığı üçüncü kişilere bildirilmesini isteme haklarına sahipsiniz.
 
 6. Başvuru Yöntemi
-Haklarınızı kullanmak için [destek e-posta adresi] üzerinden bizimle iletişime geçebilir veya uygulama içi Ayarlar > Verilerimi Dışa Aktar / Hesabımı Sil araçlarını doğrudan kullanabilirsiniz.`;
+Haklarınızı kullanmak için support@beautyloop.net üzerinden bizimle iletişime geçebilir veya uygulama içi Ayarlar > Verilerimi Dışa Aktar / Hesabımı Sil araçlarını doğrudan kullanabilirsiniz.`;
 
 export const TERMS_AND_CONSENT_TEXT = `KULLANICI SÖZLEŞMESİ & AÇIK RIZA METNİ (Taslak — ${KVKK_CONSENT_VERSION_LABEL})
 
@@ -52,10 +52,10 @@ BeautyLoop bir tıbbi cihaz, sağlık hizmeti sağlayıcısı veya dermatolojik 
 • Uygulamayı yasa dışı, zarar verici veya başkalarının haklarını ihlal edecek şekilde kullanamazsınız.
 
 4. Fikri Mülkiyet
-Uygulamanın tasarımı, yazılımı ve marka unsurları [Şirket/Uygulama Adı]'ne aittir. Kendi girdiğiniz veriler (ürünleriniz, rutinleriniz, notlarınız) size aittir; istediğiniz zaman dışa aktarabilir veya silebilirsiniz.
+Uygulamanın tasarımı, yazılımı ve marka unsurları BeautyLoop'a aittir. Kendi girdiğiniz veriler (ürünleriniz, rutinleriniz, notlarınız) size aittir; istediğiniz zaman dışa aktarabilir veya silebilirsiniz.
 
 5. Sorumluluğun Sınırlandırılması
 BeautyLoop, uygulamanın kesintisiz veya hatasız çalışacağını garanti etmez. Uygulamanın kullanımından doğabilecek dolaylı zararlardan yasaların izin verdiği azami ölçüde sorumlu tutulamayız.
 
 6. Açık Rıza Beyanı
-Yukarıda yer alan KVKK Aydınlatma Metni'ni okuduğumu, anladığımı ve bu kapsamda açıklanan kişisel verilerimin belirtilen amaçlarla işlenmesine, "Kaydol" adımında onay kutucuğunu işaretleyerek özgür irademle, açık ve bilgilendirilmiş şekilde rıza gösterdiğimi kabul ederim. Bu rızamı istediğim zaman Ayarlar > Hesabımı Sil yoluyla veya [destek e-posta adresi] üzerinden geri çekebilirim.`;
+Yukarıda yer alan KVKK Aydınlatma Metni'ni okuduğumu, anladığımı ve bu kapsamda açıklanan kişisel verilerimin belirtilen amaçlarla işlenmesine, "Kaydol" adımında onay kutucuğunu işaretleyerek özgür irademle, açık ve bilgilendirilmiş şekilde rıza gösterdiğimi kabul ederim. Bu rızamı istediğim zaman Ayarlar > Hesabımı Sil yoluyla veya support@beautyloop.net üzerinden geri çekebilirim.`;

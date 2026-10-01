@@ -1,3 +1,5 @@
+import type { TranslationKey } from "@/i18n/LocaleContext";
+
 /** Yerel "YYYY-MM-DD" gün anahtarı — Planlayıcı'daki günlük tamamlanma kayıtları için. */
 export function toDayKey(date: Date): string {
   const year = date.getFullYear();
@@ -26,21 +28,41 @@ export function getWeekDates(anchorDate: Date): Date[] {
   });
 }
 
-export const WEEKDAY_LABELS_TR = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+/** Pazartesi'den başlayan kısa gün adları — i18n anahtarı olarak; `t(WEEKDAY_KEYS[index])` ile çevrilir. */
+export const WEEKDAY_KEYS: TranslationKey[] = [
+  "dateKeys.mon",
+  "dateKeys.tue",
+  "dateKeys.wed",
+  "dateKeys.thu",
+  "dateKeys.fri",
+  "dateKeys.sat",
+  "dateKeys.sun",
+];
 
-export const MONTH_LABELS_TR = [
-  "Ocak",
-  "Şubat",
-  "Mart",
-  "Nisan",
-  "Mayıs",
-  "Haziran",
-  "Temmuz",
-  "Ağustos",
-  "Eylül",
-  "Ekim",
-  "Kasım",
-  "Aralık",
+export const MONTH_KEYS: TranslationKey[] = [
+  "dateKeys.jan",
+  "dateKeys.feb",
+  "dateKeys.mar",
+  "dateKeys.apr",
+  "dateKeys.may",
+  "dateKeys.jun",
+  "dateKeys.jul",
+  "dateKeys.aug",
+  "dateKeys.sep",
+  "dateKeys.oct",
+  "dateKeys.nov",
+  "dateKeys.dec",
+];
+
+/** `Date.getDay()` (0=Pazar) sırasına göre çok kısa gün adları — reports.tsx grafik eksen etiketleri için. */
+export const SHORT_WEEKDAY_SUNDAY_FIRST_KEYS: TranslationKey[] = [
+  "dateKeys.shortSun",
+  "dateKeys.shortMon",
+  "dateKeys.shortTue",
+  "dateKeys.shortWed",
+  "dateKeys.shortThu",
+  "dateKeys.shortFri",
+  "dateKeys.shortSat",
 ];
 
 export function isSameDay(a: Date, b: Date): boolean {

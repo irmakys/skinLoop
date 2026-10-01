@@ -1,13 +1,24 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { LinearGradient } from "expo-linear-gradient";
-import type { ComponentProps } from "react";
+import { memo, type ComponentProps } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
 
-import { CATEGORY_ICONS, CATEGORY_LABELS_TR, type Category } from "@/constants/categories";
+import { LeopardPattern } from "@/components/LeopardPattern";
+import { CATEGORY_ICONS, CATEGORY_LABEL_KEYS, type Category } from "@/constants/categories";
+import { useLocale } from "@/i18n/LocaleContext";
 import { useAppTheme } from "@/theme/ThemeContext";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
-import { CARD_RADIUS, THEME_GRADIENTS, glowShadow, hexToRgba } from "@/theme/theme";
+import {
+  CARD_RADIUS,
+  LEOPARD_BORDER,
+  LEOPARD_PATTERN_BORDER,
+  LEOPARD_PATTERN_FILL,
+  THEME_GRADIENTS,
+  glowShadow,
+  hexToRgba,
+  isPatternedTheme,
+} from "@/theme/theme";
 
 type ProductCardProps = {
   name: string;
@@ -50,9 +61,19 @@ function PillBadge({
  * yuvarlaklığı, yumuşak dağınık gölge, ikon rozeti ve hap etiketler.
  * Renkleri seçili ThemeContext paletinden (useTheme) otomatik alır.
  */
-export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit, onDelete }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({
+  name,
+  brand,
+  category,
+  expiresAt,
+  onPress,
+  onEdit,
+  onDelete,
+}: ProductCardProps) {
   const theme = useTheme();
   const { themeId } = useAppTheme();
+  const { t } = useLocale();
+  const leopard = isPatternedTheme(themeId);
   // eslint-disable-next-line react-hooks/purity -- süresi dolmuş rozetini göstermek için render anındaki zaman yeterli
   const isExpired = expiresAt < Date.now();
 
@@ -63,13 +84,23 @@ export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit,
         styles.card,
         glowShadow(THEME_GRADIENTS[themeId][0], 0.16),
         {
-          backgroundColor: hexToRgba(theme.colors.surface, 0.86),
+          backgroundColor: hexToRgba(theme.colors.surface, leopard ? 0.74 : 0.86),
           borderRadius: CARD_RADIUS,
           borderWidth: 1,
-          borderColor: hexToRgba(THEME_GRADIENTS[themeId][0], 0.22),
+          borderColor: leopard ? LEOPARD_BORDER : hexToRgba(THEME_GRADIENTS[themeId][0], 0.22),
+          overflow: "hidden",
         },
       ]}
     >
+      {leopard ? (
+        <LeopardPattern
+          borderColor={LEOPARD_PATTERN_BORDER}
+          fillColor={LEOPARD_PATTERN_FILL}
+          opacity={0.16}
+          tileSize={55}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
       <LinearGradient
         colors={THEME_GRADIENTS[themeId]}
         start={{ x: 0, y: 0 }}
@@ -94,12 +125,12 @@ export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit,
 
         <View style={styles.pillRow}>
           <PillBadge
-            label={CATEGORY_LABELS_TR[category]}
+            label={t(CATEGORY_LABEL_KEYS[category])}
             backgroundColor={theme.colors.secondaryContainer}
             textColor={theme.colors.onSecondaryContainer}
           />
           <PillBadge
-            label={isExpired ? "Süresi doldu" : formatDate(expiresAt)}
+            label={isExpired ? t("vanity.expired") : formatDate(expiresAt)}
             icon={isExpired ? "alert-circle-outline" : "calendar-check-outline"}
             backgroundColor={isExpired ? theme.colors.errorContainer : theme.colors.tertiaryContainer}
             textColor={isExpired ? theme.colors.onErrorContainer : theme.colors.onTertiaryContainer}
@@ -124,7 +155,7 @@ export function ProductCard({ name, brand, category, expiresAt, onPress, onEdit,
       ) : null}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

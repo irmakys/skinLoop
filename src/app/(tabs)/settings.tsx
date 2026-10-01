@@ -5,15 +5,18 @@ import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useEffect, useState, type ReactNode } from "react";
-import { ScrollView, View } from "react-native";
-import { Button, Dialog, HelperText, List, Portal, Switch, Text, useTheme } from "react-native-paper";
+import { Linking, Platform, ScrollView, View } from "react-native";
+import { Button, HelperText, List, Switch, Text, useTheme } from "react-native-paper";
 
 import { AmbientBackground } from "@/components/AmbientBackground";
+import { AppDialog } from "@/components/AppDialog";
 import { GlassCard } from "@/components/GlassCard";
 import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
 import { useSession } from "@/features/auth/useSession";
+import { LanguagePicker } from "@/features/settings/LanguagePicker";
 import { ProfileHeader } from "@/features/settings/ProfileHeader";
 import { ThemePicker } from "@/features/settings/ThemePicker";
+import { useLocale, type TranslationKey } from "@/i18n/LocaleContext";
 import { clearAllJournalData } from "@/lib/journalStorage";
 import { ensureNotificationPermission, scheduleTestNotification } from "@/lib/notifications";
 import {
@@ -25,15 +28,18 @@ import { useBottomClearance } from "@/hooks/useBottomClearance";
 import { FONT_DISPLAY_BOLD } from "@/theme/fonts";
 import { CARD_RADIUS, PREMIUM_ACCENT, glowShadow } from "@/theme/theme";
 
-const LEVEL_THRESHOLDS = [
-  { min: 100, stars: 5, title: "Usta" },
-  { min: 60, stars: 4, title: "Uzman" },
-  { min: 30, stars: 3, title: "Kararlı" },
-  { min: 10, stars: 2, title: "Gelişiyor" },
-  { min: 0, stars: 1, title: "Başlangıç" },
+const SUPPORT_EMAIL = "support@beautyloop.net";
+const SUPPORT_SUBJECT = "BeautyLoop Destek Talebi";
+
+const LEVEL_THRESHOLDS: { min: number; stars: number; titleKey: TranslationKey }[] = [
+  { min: 100, stars: 5, titleKey: "settings.levelMaster" },
+  { min: 60, stars: 4, titleKey: "settings.levelExpert" },
+  { min: 30, stars: 3, titleKey: "settings.levelSteady" },
+  { min: 10, stars: 2, titleKey: "settings.levelDeveloping" },
+  { min: 0, stars: 1, titleKey: "settings.levelBeginner" },
 ];
 
-function getSkincareLevel(totalCompletions: number): { stars: number; title: string } {
+function getSkincareLevel(totalCompletions: number): { stars: number; titleKey: TranslationKey } {
   const tier = LEVEL_THRESHOLDS.find((level) => totalCompletions >= level.min);
   return tier ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
 }
@@ -52,6 +58,7 @@ function SectionCard({ title, children }: { title: string; children: ReactNode }
 export default function SettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useLocale();
   const convex = useConvex();
   const { signOut } = useSession();
   const userId = useCurrentUserId();
@@ -66,6 +73,7 @@ export default function SettingsScreen() {
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
   const [testNotificationStatus, setTestNotificationStatus] = useState<string | null>(null);
   const [isSendingTestNotification, setIsSendingTestNotification] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   useEffect(() => {
     getNotificationPreferences().then(setPreferences);
@@ -86,13 +94,11 @@ export default function SettingsScreen() {
     try {
       const granted = await ensureNotificationPermission();
       if (!granted) {
-        setTestNotificationStatus(
-          "Bildirim izni verilmedi veya bu ortamda (Expo Go) bildirimler desteklenmiyor.",
-        );
+        setTestNotificationStatus(t("settings.notificationPermissionDenied"));
         return;
       }
       await scheduleTestNotification();
-      setTestNotificationStatus("Gönderildi — 5 saniye içinde gelmesi gerekiyor.");
+      setTestNotificationStatus(t("settings.testNotificationSent"));
     } finally {
       setIsSendingTestNotification(false);
     }
@@ -111,9 +117,24 @@ export default function SettingsScreen() {
         await Sharing.shareAsync(file.uri, { mimeType: "application/json" });
       }
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : "Veri dışa aktarılamadı.");
+      setExportError(err instanceof Error ? err.message : t("settings.exportFailed"));
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  async function handleContactSupport() {
+    setContactError(null);
+    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(SUPPORT_SUBJECT)}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        setContactError(t("settings.contactUsFailed"));
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      setContactError(t("settings.contactUsFailed"));
     }
   }
 
@@ -129,7 +150,7 @@ export default function SettingsScreen() {
       setIsDeleteDialogVisible(false);
       router.replace("/(auth)/sign-in");
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Hesap silinemedi.");
+      setDeleteError(err instanceof Error ? err.message : t("settings.deleteAccountFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -145,10 +166,10 @@ export default function SettingsScreen() {
           <GlassCard padding={22} accentColor={PREMIUM_ACCENT[1]} style={{ gap: 16 }}>
             <View>
               <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-                Cilt Bakım Seviyen
+                {t("settings.skincareLevelLabel")}
               </Text>
               <Text style={{ fontFamily: FONT_DISPLAY_BOLD, fontSize: 24, color: theme.colors.onSurface }}>
-                {level.title}
+                {t(level.titleKey)}
               </Text>
             </View>
             <View style={{ flexDirection: "row", gap: 6 }}>
@@ -166,8 +187,7 @@ export default function SettingsScreen() {
               })}
             </View>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Tamamladığın her rutin adımı seni bir sonraki seviyeye taşıyor — şu ana kadar{" "}
-              {stats?.totalCompletions ?? 0} adım tamamladın.
+              {t("settings.completionsProgress", { count: stats?.totalCompletions ?? 0 })}
             </Text>
             <Button
               mode="contained-tonal"
@@ -175,18 +195,22 @@ export default function SettingsScreen() {
               onPress={() => router.push("/(tabs)/reports")}
               style={{ borderRadius: CARD_RADIUS }}
             >
-              Rutin Raporunu Gör
+              {t("settings.viewReport")}
             </Button>
           </GlassCard>
 
-          <SectionCard title="Görünüm ve Tema">
+          <SectionCard title={t("settings.appearanceSection")}>
             <ThemePicker />
           </SectionCard>
 
-          <SectionCard title="Bildirim Tercihleri">
+          <SectionCard title={t("settings.languageSection")}>
+            <LanguagePicker />
+          </SectionCard>
+
+          <SectionCard title={t("settings.notificationSection")}>
             <List.Item
-              title="Rutin Hatırlatıcıları"
-              description="Sabah/akşam/haftalık rutin bildirimleri"
+              title={t("settings.loopReminders")}
+              description={t("settings.loopRemindersDesc")}
               right={() => (
                 <Switch
                   value={preferences?.loopRemindersEnabled ?? true}
@@ -195,8 +219,8 @@ export default function SettingsScreen() {
               )}
             />
             <List.Item
-              title="Ürün Süre Hatırlatıcıları"
-              description="PAO/SKT yaklaşınca bildirim"
+              title={t("settings.expiryReminders")}
+              description={t("settings.expiryRemindersDesc")}
               right={() => (
                 <Switch
                   value={preferences?.expiryRemindersEnabled ?? true}
@@ -205,8 +229,8 @@ export default function SettingsScreen() {
               )}
             />
             <List.Item
-              title="Bildirim Sesi"
-              description="Kapalıyken bildirimler yalnızca yazılı gelir, ses/titreşim olmaz"
+              title={t("settings.notificationSound")}
+              description={t("settings.notificationSoundDesc")}
               right={() => (
                 <Switch
                   value={preferences?.soundEnabled ?? true}
@@ -220,27 +244,41 @@ export default function SettingsScreen() {
               loading={isSendingTestNotification}
               style={{ marginHorizontal: 16, marginTop: 4, marginBottom: 8 }}
             >
-              Test Bildirimi Gönder (5 sn)
+              {t("settings.sendTestNotification")}
             </Button>
             {testNotificationStatus ? (
               <HelperText type="info" style={{ marginHorizontal: 16 }}>
                 {testNotificationStatus}
               </HelperText>
             ) : null}
+            {Platform.OS === "android" ? (
+              <>
+                <List.Item
+                  title={t("settings.batteryOptimization")}
+                  description={t("settings.batteryOptimizationDesc")}
+                  descriptionNumberOfLines={4}
+                />
+                <Button
+                  mode="outlined"
+                  icon="battery-alert"
+                  onPress={() => Linking.openSettings()}
+                  style={{ marginHorizontal: 16, marginTop: 4, marginBottom: 8 }}
+                >
+                  {t("settings.openAppSettings")}
+                </Button>
+              </>
+            ) : null}
           </SectionCard>
 
-          <SectionCard title="Veri Yönetimi">
-            <List.Item
-              title="Verilerimi Dışa Aktar"
-              description="Vanity, Loops ve Journal kayıtlarını JSON olarak indir"
-            />
+          <SectionCard title={t("settings.dataSection")}>
+            <List.Item title={t("settings.exportData")} description={t("settings.exportDataDesc")} />
             <Button
               mode="outlined"
               onPress={handleExport}
               loading={isExporting}
               style={{ marginHorizontal: 16, marginBottom: 8 }}
             >
-              Dışa Aktar
+              {t("settings.exportButton")}
             </Button>
             {exportError ? (
               <HelperText type="error" style={{ marginHorizontal: 16 }}>
@@ -249,44 +287,56 @@ export default function SettingsScreen() {
             ) : null}
           </SectionCard>
 
-          <SectionCard title="Tehlikeli Bölge">
-            <List.Item
-              title="Hesabımı ve Verilerimi Sil"
-              description="Bu işlem geri alınamaz — tüm sunucu verisi ve cihazdaki Journal fotoğrafları kalıcı olarak silinir (KVKK/GDPR)"
-            />
+          <SectionCard title={t("settings.supportSection")}>
+            <List.Item title={t("settings.contactUsTitle")} description={t("settings.contactUsDesc")} />
+            <Button
+              mode="outlined"
+              icon="email-outline"
+              onPress={handleContactSupport}
+              style={{ marginHorizontal: 16, marginBottom: 8 }}
+            >
+              {t("settings.contactUsCta")}
+            </Button>
+            {contactError ? (
+              <HelperText type="error" style={{ marginHorizontal: 16 }}>
+                {contactError}
+              </HelperText>
+            ) : null}
+          </SectionCard>
+
+          <SectionCard title={t("settings.dangerZoneSection")}>
+            <List.Item title={t("settings.deleteAccountListTitle")} description={t("settings.deleteAccountListDesc")} />
             <Button
               mode="contained"
               buttonColor={theme.colors.error}
               onPress={() => setIsDeleteDialogVisible(true)}
               style={{ marginHorizontal: 16, marginBottom: 16 }}
             >
-              Hesabı Sil
+              {t("settings.deleteAccountCta")}
             </Button>
           </SectionCard>
 
         <Button mode="text" onPress={() => signOut()}>
-          Çıkış Yap
+          {t("common.signOut")}
         </Button>
       </ScrollView>
 
-      <Portal>
-        <Dialog visible={isDeleteDialogVisible} onDismiss={() => setIsDeleteDialogVisible(false)}>
-          <Dialog.Title>Emin misin?</Dialog.Title>
-          <Dialog.Content>
-            <Text>
-              Hesabın, tüm ürünlerin, rutinlerin ve cihazdaki Journal fotoğrafların kalıcı olarak
-              silinecek. Bu işlem geri alınamaz.
-            </Text>
-            {deleteError ? <HelperText type="error">{deleteError}</HelperText> : null}
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setIsDeleteDialogVisible(false)}>Vazgeç</Button>
+      <AppDialog
+        visible={isDeleteDialogVisible}
+        onDismiss={() => setIsDeleteDialogVisible(false)}
+        title={t("settings.deleteAccountTitle")}
+        actions={
+          <>
+            <Button onPress={() => setIsDeleteDialogVisible(false)}>{t("common.cancel")}</Button>
             <Button onPress={handleDeleteAccount} loading={isDeleting} textColor={theme.colors.error}>
-              Kalıcı Olarak Sil
+              {t("settings.deleteAccountButton")}
             </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+          </>
+        }
+      >
+        <Text>{t("settings.deleteAccountBody")}</Text>
+        {deleteError ? <HelperText type="error">{deleteError}</HelperText> : null}
+      </AppDialog>
     </AmbientBackground>
   );
 }

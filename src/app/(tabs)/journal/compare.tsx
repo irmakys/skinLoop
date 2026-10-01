@@ -4,6 +4,7 @@ import { ScrollView, View } from "react-native";
 import { Card, Chip, Text, useTheme } from "react-native-paper";
 
 import { useCurrentUserId } from "@/features/auth/useCurrentUserId";
+import { useLocale } from "@/i18n/LocaleContext";
 import { listJournalEntries, type JournalEntry } from "@/lib/journalStorage";
 
 function formatDate(epochMs: number): string {
@@ -43,6 +44,7 @@ function ComparisonColumn({ label, entry }: { label: string; entry: JournalEntry
 
 export default function CompareScreen() {
   const theme = useTheme();
+  const { t } = useLocale();
   const { before, after } = useLocalSearchParams<{ before: string; after: string }>();
   const userId = useCurrentUserId();
   const [beforeEntry, setBeforeEntry] = useState<JournalEntry | null>(null);
@@ -78,8 +80,8 @@ export default function CompareScreen() {
       contentContainerStyle={{ flexDirection: "row", padding: 12, gap: 12 }}
       style={{ backgroundColor: theme.colors.background }}
     >
-      <ComparisonColumn label="Önce" entry={beforeEntry} />
-      <ComparisonColumn label="Sonra" entry={afterEntry} />
+      <ComparisonColumn label={t("journal.before")} entry={beforeEntry} />
+      <ComparisonColumn label={t("journal.after")} entry={afterEntry} />
     </ScrollView>
   );
 }
